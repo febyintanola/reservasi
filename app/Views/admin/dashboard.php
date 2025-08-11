@@ -1,4 +1,4 @@
-<?= $this->extend('layouts/header') ?>
+<?= $this->extend('admin/layouts/header') ?>
 
 <?= $this->section('content') ?>
 <body class="bg-white font-sans antialiased">

@@ -7,6 +7,6 @@ use CodeIgniter\Model;
 class RoomModel extends Model
 {
     protected $table = 'rooms';
-    protected $allowedFields = ['nama_ruangan', 'lokasi', 'kapasitas',"ruangrapat_url"];
+    protected $allowedFields = ['nama_ruangan', 'lokasi', 'kapasitas', 'jenis', 'ruangrapat_url'];
     
 }

@@ -47,6 +47,11 @@ class UserController extends BaseController
     // Tangani upload foto jika ada
     $foto = $this->request->getFile('foto');
     if ($foto && $foto->isValid() && !$foto->hasMoved()) {
+        // Validasi tipe file yang diperbolehkan
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+        if (!in_array($foto->getMimeType(), $allowedTypes)) {
+            return redirect()->back()->with('error', 'Jenis file tidak didukung');
+        }
         // Bisa tambahkan validasi file type, size dll di sini
         $newName = $foto->getRandomName();
         $foto->move(WRITEPATH . 'uploads', $newName);

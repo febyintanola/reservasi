@@ -126,4 +126,50 @@ class RoomController extends BaseController
 
         return view('user/ruang/konfirmasi', ['data' => $data]);
     }
+
+    // Add the store method to handle room creation
+    public function store()
+    {
+        // Collect POST data
+        $data = [
+            'nama_ruangan' => $this->request->getPost('nama'),
+            'lokasi'       => $this->request->getPost('lokasi'),
+            'kapasitas'    => $this->request->getPost('kapasitas'),
+            'jenis'        => $this->request->getPost('jenis'),
+        ];
+
+        // Optional: handle image upload
+        $foto = $this->request->getFile('foto');
+        if ($foto && $foto->isValid() && !$foto->hasMoved()) {
+            $allowed = ['image/jpeg', 'image/png', 'image/gif'];
+            if (in_array($foto->getMimeType(), $allowed)) {
+                $newName = $foto->getRandomName();
+                $foto->move(WRITEPATH . 'uploads', $newName);
+                $data['ruangrapat_url'] = base_url('writable/uploads/' . $newName);
+            }
+        }
+        $roomModel = new \App\Models\RoomModel();
+
+        // Insert data into the database
+        if ($roomModel->insert($data)) {
+            return redirect()->to('/admin/ruang')->with('success', 'Ruangan berhasil ditambahkan.');
+        } else {
+            return redirect()->back()->with('error', 'Gagal menambahkan ruangan.');
+        }
+    }
+
+    // Admin list rooms
+    public function adminIndex()
+    {
+        $model = new RoomModel();
+        $data['rooms'] = $model->findAll();
+        return view('admin/ruang/list', $data);
+    }
+
+    // Admin create room form
+    public function create()
+    {
+        $data['jenisList'] = ['Teater', 'Classroom'];
+        return view('admin/ruang/tambah', $data);
+    }
 }

@@ -49,11 +49,14 @@ $routes->group('admin', ['filter' => 'auth'], function($routes) {
     // Semua ini hanya untuk role 'admin'
     $routes->group('', ['filter' => 'role:admin'], function($routes) {
         $routes->get('/', 'AdminDashboardController::index');
-        $routes->get('/dashboard', 'AdminDashboardController::index');
+        $routes->get('dashboard', 'AdminDashboardController::index');
         
         // Tambahkan route admin lainnya di sini jika ada
-        $routes->get('/mobil', 'Admin\MobilController::index');
-        $routes->get('/ruang', 'Admin\RuangController::index');
+        $routes->get('mobil', 'Admin\MobilController::index');
+        $routes->get('ruang', 'RoomController::adminIndex');
+        $routes->get('ruang/create', 'RoomController::create');
+        $routes->get('ruang/tambah', 'RoomController::create');
+        $routes->post('ruang/store', 'RoomController::store');
     });
 
 });
