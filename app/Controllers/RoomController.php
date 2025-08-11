@@ -1,0 +1,129 @@
+<?php
+
+namespace App\Controllers;
+
+use App\Models\RoomModel;
+use App\Models\BookingRuangModel;
+
+class RoomController extends BaseController
+{
+    public function index() {
+        $model = new RoomModel();
+        $data['rooms'] = $model->findAll();
+        return view('ruang/index', $data);
+    }
+
+    public function ajaxCheckAvailability()
+    {
+        $tanggal = $this->request->getGet('tanggal');
+        $jam_mulai = $this->request->getGet('jam_mulai');
+        $jam_selesai = $this->request->getGet('jam_selesai');
+
+        $roomModel = new \App\Models\RoomModel();
+        $rooms = $roomModel->findAll();
+
+        $bookingModel = new \App\Models\BookingRuangModel();
+
+        foreach ($rooms as &$room) {
+            
+            $conflict = $bookingModel->where('room_id', $room['id'])
+            ->where('tanggal', $tanggal)
+            ->groupStart()
+            ->where("jam_mulai <", $jam_selesai)
+            ->where("jam_selesai >", $jam_mulai)
+            ->groupEnd()
+            ->whereIn('status', ['pending', 'approved'])
+            ->first();
+            
+            $room['tersedia'] = $conflict ? false : true;
+    }
+    return $this->response->setJSON($rooms);
+}
+
+    public function checkAvailability()
+    {
+        $tanggal = $this->request->getPost('tanggal');
+        $jam_mulai = $this->request->getPost('jam_mulai');
+        $jam_selesai = $this->request->getPost('jam_selesai');
+
+        $roomModel = new RoomModel();
+        $rooms = $roomModel->findAll();
+
+        $bookingModel = new BookingRuangModel();
+
+        foreach ($rooms as &$room) {
+            $conflict = $bookingModel->where('room_id', $room['id'])
+                ->where('tanggal', $tanggal)
+                ->groupStart()
+                    ->where("jam_mulai <", $jam_selesai)
+                    ->where("jam_selesai >", $jam_mulai)
+                ->groupEnd()
+                ->whereIn('status', ['pending', 'approved'])
+                ->first();
+
+            $room['tersedia'] = $conflict ? false : true;
+        }
+
+        return view('ruang/available', [
+            'rooms' => $rooms,
+            'tanggal' => $tanggal,
+            'jam_mulai' => $jam_mulai,
+            'jam_selesai' => $jam_selesai,
+        ]);
+    }
+      public function bookingForm()
+    {
+        $roomId     = $this->request->getGet('room');
+        $tanggal    = $this->request->getGet('tanggal');
+        $jamMulai   = $this->request->getGet('jam_mulai');
+        $jamSelesai = $this->request->getGet('jam_selesai');
+
+        // ✅ Ambil user_id dari session
+        $userid = session()->get('user_id');
+
+        // Cek kalau user_id tidak tersedia
+        if (!$userid) {
+            return redirect()->to('/login')->with('error', 'Silakan login dulu.');
+        }
+
+        // Ambil data ruangan dari DB
+        $roomModel = new \App\Models\RoomModel();
+        $room = $roomModel->find($roomId);
+
+        // Kirim semua data ke view
+        return view('ruang/form', [
+            'room'       => $room,
+            'roomId'     => $roomId,
+            'tanggal'    => $tanggal,
+            'jamMulai'   => $jamMulai,
+            'jamSelesai' => $jamSelesai,
+            'userid'     => $userid 
+        ]);
+    }
+
+
+
+    public function saveBooking()
+    {
+        $bookingModel = new BookingRuangModel();
+
+        $data = [
+            'acara'      => $this->request->getPost('acara'),
+            'tanggal'    => $this->request->getPost('tanggal'),
+            'jam_mulai'  => $this->request->getPost('jam_mulai'),
+            'jam_selesai'=> $this->request->getPost('jam_selesai'),
+            'peserta'    => $this->request->getPost('peserta'),
+            'task'       => $this->request->getPost('Task'),
+            'kebutuhan'  => implode(',', $this->request->getPost('kebutuhan') ?? []),
+            'keterangan' => $this->request->getPost('keterangan'),
+            'procost'    => $this->request->getPost('Procost'),
+            'exptype'    => $this->request->getPost('exptype'),
+            'room_id'    => $this->request->getPost('room_id'),
+            'user_id'    => $this->request->getPost('user_id')
+        ];
+
+        $bookingModel->save($data);
+
+        return view('ruang/konfirmasi', ['data' => $data]);
+    }
+}

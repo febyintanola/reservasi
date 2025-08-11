@@ -1,0 +1,29 @@
+<?php
+namespace App\Models;
+
+use CodeIgniter\Model;
+
+class UserModel extends Model
+{
+    protected $table = 'users';
+    protected $primaryKey = 'id';
+    protected $allowedFields = [
+        'username', 'email', 'password', 'status', 'status_message',
+        'active', 'last_active', 'created_at', 'updated_at', 'deleted_at'
+    ];
+    protected $useTimestamps = true;
+    protected $useSoftDeletes = true;
+
+    public function getUserWithProfileById($id)
+    {
+        return $this->select('users.*, 
+                user_profile.nama as profile_nama, 
+                user_profile.no_tlp as profile_no_tlp, 
+                user_profile.divisi as profile_divisi, 
+                user_profile.role as profile_role')
+            ->join('user_profile', 'user_profile.user_id = users.id', 'left')
+            ->where('users.id', $id)
+            ->first();
+    }
+
+}
