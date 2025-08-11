@@ -1,4 +1,4 @@
-<?= $this->extend('layouts/header') ?>
+<?= $this->extend('user/layouts/header') ?>
 
 <?= $this->section('content') ?>
 <main class="max-w-md mx-auto px-4 py-6">

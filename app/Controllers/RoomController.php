@@ -10,7 +10,7 @@ class RoomController extends BaseController
     public function index() {
         $model = new RoomModel();
         $data['rooms'] = $model->findAll();
-        return view('ruang/index', $data);
+        return view('user/ruang/index', $data);
     }
 
     public function ajaxCheckAvailability()
@@ -64,7 +64,7 @@ class RoomController extends BaseController
             $room['tersedia'] = $conflict ? false : true;
         }
 
-        return view('ruang/available', [
+        return view('user/ruang/available', [
             'rooms' => $rooms,
             'tanggal' => $tanggal,
             'jam_mulai' => $jam_mulai,
@@ -91,7 +91,7 @@ class RoomController extends BaseController
         $room = $roomModel->find($roomId);
 
         // Kirim semua data ke view
-        return view('ruang/form', [
+        return view('user/ruang/form', [
             'room'       => $room,
             'roomId'     => $roomId,
             'tanggal'    => $tanggal,
@@ -124,6 +124,6 @@ class RoomController extends BaseController
 
         $bookingModel->save($data);
 
-        return view('ruang/konfirmasi', ['data' => $data]);
+        return view('user/ruang/konfirmasi', ['data' => $data]);
     }
 }

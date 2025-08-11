@@ -10,7 +10,7 @@ class CarController extends BaseController
 {
     public function index()
     {
-        return redirect()->to('/car/form');
+        return redirect()->to('user/car/form');
     }
 
     public function form()
@@ -22,7 +22,7 @@ class CarController extends BaseController
             return redirect()->to('/login')->with('error', 'Silakan login dahulu.');
         }
 
-        return view('car/form', ['user_id' => $user_id]);
+        return view('user/car/form', ['user_id' => $user_id]);
     }
 
     public function save()
@@ -57,6 +57,6 @@ class CarController extends BaseController
 
         $model->insert($data);
 
-        return view('car/konfirmasi', ['data' => $data]);
+        return view('user/car/konfirmasi', ['data' => $data]);
     }
 }

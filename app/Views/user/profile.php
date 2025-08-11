@@ -1,4 +1,4 @@
-<?= $this->extend('layouts/header') ?>
+<?= $this->extend('user/layouts/header') ?>
 <?= $this->section('content') ?>
 
 <main class="flex-grow flex flex-col items-center px-4">

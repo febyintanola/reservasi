@@ -1,4 +1,4 @@
-<?= $this->extend('layouts/header') ?>
+<?= $this->extend('user/layouts/header') ?>
 <?= $this->section('content') ?>
 
 <main class="p-6 bg-white min-h-screen">

@@ -81,7 +81,7 @@ class HistoryController extends BaseController
             'status' => $booking['status'],
         ];
 
-        return view('ruang/detail', $data);
+        return view('user/ruang/detail', $data);
     }
 
     public function detailMobil($id)
@@ -114,6 +114,6 @@ class HistoryController extends BaseController
             'status' => $booking['status'],
         ];
 
-        return view('car/detail', ['booking' => $booking]);
+        return view('user/car/detail', ['booking' => $booking]);
     }
 }

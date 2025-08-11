@@ -9,7 +9,7 @@
 <body class="flex bg-white min-h-screen">
   
   <!-- Sidebar -->
-  <?= $this->include('layouts/sidebar') ?>
+  <?= $this->include('user/layouts/sidebar') ?>
 
   <!-- Main Content Area -->
   <div class="flex-1 flex flex-col">

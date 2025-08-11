@@ -6,7 +6,8 @@ class Home extends BaseController
 {
     public function index()
     {
-        return view('home');
+        // Cek role atau langsung load view untuk user
+        return view('user/home');
     }
 }
 
