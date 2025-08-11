@@ -57,6 +57,8 @@ $routes->group('admin', ['filter' => 'auth'], function($routes) {
         $routes->get('ruang/create', 'RoomController::create');
         $routes->get('ruang/tambah', 'RoomController::create');
         $routes->post('ruang/store', 'RoomController::store');
+        $routes->get('ruang/edit/(:num)', 'RoomController::edit/$1');
+        $routes->post('ruang/update/(:num)', 'RoomController::update/$1');
     });
 
 });

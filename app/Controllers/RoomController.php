@@ -130,7 +130,17 @@ class RoomController extends BaseController
     // Add the store method to handle room creation
     public function store()
     {
-        // Collect POST data
+        // Validate required fields first
+        $rules = [
+            'nama'      => 'required|min_length[2]',
+            'lokasi'    => 'required',
+            'kapasitas' => 'required|is_natural_no_zero',
+            'jenis'     => 'required',
+        ];
+        if (! $this->validate($rules)) {
+            return redirect()->back()->withInput()->with('error', implode("\n", $this->validator->getErrors()));
+        }
+
         $data = [
             'nama_ruangan' => $this->request->getPost('nama'),
             'lokasi'       => $this->request->getPost('lokasi'),
@@ -138,24 +148,47 @@ class RoomController extends BaseController
             'jenis'        => $this->request->getPost('jenis'),
         ];
 
-        // Optional: handle image upload
+        // Handle image upload to public/uploads
         $foto = $this->request->getFile('foto');
-        if ($foto && $foto->isValid() && !$foto->hasMoved()) {
+        if ($foto && $foto->isValid() && $foto->getError() === UPLOAD_ERR_OK) {
             $allowed = ['image/jpeg', 'image/png', 'image/gif'];
-            if (in_array($foto->getMimeType(), $allowed)) {
-                $newName = $foto->getRandomName();
-                $foto->move(WRITEPATH . 'uploads', $newName);
-                $data['ruangrapat_url'] = base_url('writable/uploads/' . $newName);
+            if (!in_array($foto->getMimeType(), $allowed)) {
+                return redirect()->back()->withInput()->with('error', 'Tipe gambar tidak didukung.');
+            }
+            $uploadsDir = rtrim(FCPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'uploads';
+            if (!is_dir($uploadsDir) && !@mkdir($uploadsDir, 0755, true)) {
+                return redirect()->back()->withInput()->with('error', 'Gagal membuat folder uploads. Periksa permission.');
+            }
+            if (!is_writable($uploadsDir)) {
+                return redirect()->back()->withInput()->with('error', 'Folder uploads tidak writable. Periksa permission.');
+            }
+            $newName = $foto->getRandomName();
+            if (!$foto->hasMoved() && $foto->move($uploadsDir, $newName)) {
+                $data['ruangrapat_url'] = base_url('uploads/' . $newName);
+            } else {
+                return redirect()->back()->withInput()->with('error', 'Gagal menyimpan gambar.');
             }
         }
-        $roomModel = new \App\Models\RoomModel();
 
-        // Insert data into the database
+        $roomModel = new \App\Models\RoomModel();
         if ($roomModel->insert($data)) {
             return redirect()->to('/admin/ruang')->with('success', 'Ruangan berhasil ditambahkan.');
-        } else {
-            return redirect()->back()->with('error', 'Gagal menambahkan ruangan.');
         }
+
+        // Gather model/DB errors for easier debugging
+        $modelErrors = $roomModel->errors();
+        $dbError = $roomModel->db->error();
+        $errMsg = '';
+        if (!empty($modelErrors)) {
+            $errMsg .= implode("\n", $modelErrors) . "\n";
+        }
+        if (!empty($dbError['message'])) {
+            $errMsg .= 'DB: ' . $dbError['message'];
+        }
+        if ($errMsg === '') {
+            $errMsg = 'Gagal menambahkan ruangan (alasan tidak diketahui).';
+        }
+        return redirect()->back()->withInput()->with('error', $errMsg);
     }
 
     // Admin list rooms
@@ -169,7 +202,90 @@ class RoomController extends BaseController
     // Admin create room form
     public function create()
     {
-        $data['jenisList'] = ['Teater', 'Classroom'];
+        $data['jenisList'] = ['Theater', 'Classroom'];
         return view('admin/ruang/tambah', $data);
+    }
+
+    // Admin edit room form
+    public function edit($id)
+    {
+        $model = new RoomModel();
+        $room = $model->find($id);
+        if (!$room) {
+            return redirect()->to('/admin/ruang')->with('error', 'Ruangan tidak ditemukan.');
+        }
+
+        $data = [
+            'room' => $room,
+            'jenisList' => ['Theater', 'Classroom'],
+        ];
+        return view('admin/ruang/edit', $data);
+    }
+
+    // Admin update room action
+    public function update($id)
+    {
+        $model = new RoomModel();
+        $room = $model->find($id);
+        if (!$room) {
+            return redirect()->to('/admin/ruang')->with('error', 'Ruangan tidak ditemukan.');
+        }
+
+        $rules = [
+            'nama'      => 'required|min_length[2]',
+            'lokasi'    => 'required',
+            'kapasitas' => 'required|is_natural_no_zero',
+            'jenis'     => 'required',
+        ];
+        if (! $this->validate($rules)) {
+            return redirect()->back()->withInput()->with('error', implode("\n", $this->validator->getErrors()));
+        }
+
+        $data = [
+            'nama_ruangan' => $this->request->getPost('nama'),
+            'lokasi'       => $this->request->getPost('lokasi'),
+            'kapasitas'    => $this->request->getPost('kapasitas'),
+            'jenis'        => $this->request->getPost('jenis'),
+        ];
+
+        // Optional image upload replacement
+        $foto = $this->request->getFile('foto');
+        if ($foto && $foto->isValid() && $foto->getError() === UPLOAD_ERR_OK) {
+            $allowed = ['image/jpeg', 'image/png', 'image/gif'];
+            if (!in_array($foto->getMimeType(), $allowed)) {
+                return redirect()->back()->withInput()->with('error', 'Tipe gambar tidak didukung.');
+            }
+            $uploadsDir = rtrim(FCPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'uploads';
+            if (!is_dir($uploadsDir) && !@mkdir($uploadsDir, 0755, true)) {
+                return redirect()->back()->withInput()->with('error', 'Gagal membuat folder uploads. Periksa permission.');
+            }
+            if (!is_writable($uploadsDir)) {
+                return redirect()->back()->withInput()->with('error', 'Folder uploads tidak writable. Periksa permission.');
+            }
+            $newName = $foto->getRandomName();
+            if (!$foto->hasMoved() && $foto->move($uploadsDir, $newName)) {
+                $data['ruangrapat_url'] = base_url('uploads/' . $newName);
+            } else {
+                return redirect()->back()->withInput()->with('error', 'Gagal menyimpan gambar.');
+            }
+        }
+
+        if ($model->update($id, $data)) {
+            return redirect()->to('/admin/ruang')->with('success', 'Ruangan berhasil diperbarui.');
+        }
+
+        $modelErrors = $model->errors();
+        $dbError = $model->db->error();
+        $errMsg = '';
+        if (!empty($modelErrors)) {
+            $errMsg .= implode("\n", $modelErrors) . "\n";
+        }
+        if (!empty($dbError['message'])) {
+            $errMsg .= 'DB: ' . $dbError['message'];
+        }
+        if ($errMsg === '') {
+            $errMsg = 'Gagal memperbarui ruangan (alasan tidak diketahui).';
+        }
+        return redirect()->back()->withInput()->with('error', $errMsg);
     }
 }
