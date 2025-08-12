@@ -24,8 +24,11 @@ class UserController extends BaseController
         // Ambil data profil user
         $profile = $userProfileModel->where('user_id', $userId)->first();
 
-        // Kirim ke view
-        return view('user/profile', [
+    // Tentukan konteks (admin vs user) berdasarkan URL saat ini
+    $isAdminContext = (strpos(uri_string(), 'admin') === 0) || (strpos(current_url(), '/admin') !== false);
+
+    // Kirim ke view yang sesuai
+    return view($isAdminContext ? 'admin/profile' : 'user/profile', [
             'user'    => $user,
             'profile' => $profile
         ]);
@@ -34,6 +37,9 @@ class UserController extends BaseController
     public function update()
 {
     $userId = session()->get('user_id');
+    if (!$userId) {
+        return redirect()->to('/login');
+    }
 
     $userModel = new UserModel();
     $userProfileModel = new UserProfileModel();
@@ -44,20 +50,28 @@ class UserController extends BaseController
         'divisi' => $this->request->getPost('divisi'),
     ];
 
-    // Tangani upload foto jika ada
+    // Tangani upload foto jika ada (simpan ke public/uploads agar dapat diakses)
     $foto = $this->request->getFile('foto');
-    if ($foto && $foto->isValid() && !$foto->hasMoved()) {
-        // Validasi tipe file yang diperbolehkan
+    if ($foto && $foto->isValid() && $foto->getError() === UPLOAD_ERR_OK) {
         $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
         if (!in_array($foto->getMimeType(), $allowedTypes)) {
             return redirect()->back()->with('error', 'Jenis file tidak didukung');
         }
-        // Bisa tambahkan validasi file type, size dll di sini
-        $newName = $foto->getRandomName();
-        $foto->move(WRITEPATH . 'uploads', $newName);
 
-        // Simpan path atau URL foto ke database
-        $profileData['foto_url'] = base_url('writable/uploads/' . $newName);
+        $uploadsDir = rtrim(FCPATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'uploads';
+        if (!is_dir($uploadsDir) && !@mkdir($uploadsDir, 0755, true)) {
+            return redirect()->back()->with('error', 'Gagal membuat folder uploads.');
+        }
+        if (!is_writable($uploadsDir)) {
+            return redirect()->back()->with('error', 'Folder uploads tidak writable.');
+        }
+
+        $newName = $foto->getRandomName();
+        if (!$foto->hasMoved() && $foto->move($uploadsDir, $newName)) {
+            $profileData['foto_url'] = base_url('uploads/' . $newName);
+        } else {
+            return redirect()->back()->with('error', 'Gagal menyimpan gambar.');
+        }
     }
 
     $existingProfile = $userProfileModel->where('user_id', $userId)->first();
@@ -69,7 +83,11 @@ class UserController extends BaseController
         $userProfileModel->insert($profileData);
     }
 
-    return redirect()->to('/user/profile')->with('success', 'Profil berhasil diperbarui.');
+    // Redirect back to profile page depending on scope
+    $role = strtolower(session()->get('role') ?? 'user');
+    $isAdminScope = (strpos(current_url(), '/admin') !== false) || ($role === 'admin' && strpos(previous_url(), '/admin') !== false);
+    $dest = $isAdminScope ? '/admin/profile' : '/user/profile';
+    return redirect()->to($dest)->with('success', 'Profil berhasil diperbarui.');
 }
 
 }

@@ -49,13 +49,12 @@
     <!-- Field khusus Overhaul -->
     <div id="overhaul-fields" style="display: none;">
       <div>
-        <label class="block text-xs mb-1">Task</label>
-        <input name="Task" type="text" class="w-full border border-gray-300 rounded-md px-3 py-1 text-xs focus:ring-gray-400" />
-      </div>
-
-      <div>
         <label class="block text-xs mb-1">Project Costing</label>
         <input name="Procost" type="text" class="w-full border border-gray-300 rounded-md px-3 py-1 text-xs focus:ring-gray-400" />
+      </div>
+      <div>
+        <label class="block text-xs mb-1">Task</label>
+        <input name="Task" type="text" class="w-full border border-gray-300 rounded-md px-3 py-1 text-xs focus:ring-gray-400" />
       </div>
 
       <div>

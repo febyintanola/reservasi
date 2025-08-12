@@ -201,4 +201,12 @@ public function storeRegister()
     {
         return view('profile');
     }
+
+    public function unauthorized()
+    {
+        // Return a simple unauthorized page with 403 status
+        return \Config\Services::response()
+            ->setStatusCode(403)
+            ->setBody(view('auth/unauthorized'));
+    }
 }

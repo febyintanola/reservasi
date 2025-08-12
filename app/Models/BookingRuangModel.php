@@ -10,7 +10,7 @@ class BookingRuangModel extends Model
     protected $allowedFields = [
         'acara', 'tanggal', 'jam_mulai', 'jam_selesai',
         'peserta', 'Task', 'kebutuhan', 'keterangan',
-        'Procost', 'exptype', 'room_id','user_id'
+        'Procost', 'exptype', 'room_id','user_id', 'status'
     ];
     public function getByUser($userId)
     {

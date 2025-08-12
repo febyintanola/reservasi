@@ -45,7 +45,7 @@ class HistoryController extends BaseController
             ];
         }, $carModel->getByUser($userId));
 
-        return view('history', [
+    return view('user/history', [
             'historyRuang' => $historyRuang,
             'historyMobil' => $historyMobil
         ]);

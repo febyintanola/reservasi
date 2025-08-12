@@ -101,8 +101,6 @@ class RoomController extends BaseController
         ]);
     }
 
-
-
     public function saveBooking()
     {
         $bookingModel = new BookingRuangModel();

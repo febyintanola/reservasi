@@ -1,74 +1,83 @@
 <?= $this->extend('admin/layouts/header') ?>
 
 <?= $this->section('content') ?>
-<body class="bg-white font-sans antialiased">
   <main class="max-w-7xl mx-auto px-6">
-    <h2 class="text-center font-semibold text-xl text-black my-8">Dashboard</h2>
+    <h2 class="text-center font-semibold text-2xl text-slate-800 my-8">Dashboard</h2>
 
     <!-- Ringkasan -->
-   <section class="grid sm:grid-cols-3 gap-8 mb-10 text-center">
-    <div class="flex flex-col items-center">
-        <div class="w-20 h-20 rounded-full bg-blue-300 mb-2 flex items-center justify-center">
-        <i class="fas fa-door-open text-white text-4xl"></i>
+   <section class="grid sm:grid-cols-3 gap-6 mb-10">
+      <div class="card p-6 flex items-center gap-4">
+        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+          <i class="fas fa-door-open"></i>
         </div>
-        <p class="text-gray-500 text-sm">Total Ruangan Dipesan</p>
-        <p class="text-3xl font-bold text-black"><?= esc($totalRuang) ?></p>
-    </div>
-    <div class="flex flex-col items-center">
-        <div class="w-20 h-20 rounded-full bg-blue-300 mb-2 flex items-center justify-center">
-        <i class="fas fa-car text-white text-4xl"></i>
+        <div>
+          <p class="text-slate-500 text-sm">Total Ruangan Dipesan</p>
+          <p class="text-3xl font-bold text-slate-800"><?= esc($totalRuang) ?></p>
         </div>
-        <p class="text-gray-500 text-sm">Total Mobil Dipesan</p>
-        <p class="text-3xl font-bold text-black"><?= esc($totalMobil) ?></p>
-    </div>
-    <div class="flex flex-col items-center">
-        <div class="w-20 h-20 rounded-full bg-blue-300 mb-2 flex items-center justify-center">
-        <i class="fas fa-spinner fa-spin text-white text-4xl"></i>
+      </div>
+      <div class="card p-6 flex items-center gap-4">
+        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+          <i class="fas fa-car"></i>
         </div>
-        <p class="text-gray-500 text-sm">Reservasi Berjalan</p>
-        <p class="text-3xl font-bold text-black"><?= esc($totalBerjalan) ?></p>
-    </div>
+        <div>
+          <p class="text-slate-500 text-sm">Total Mobil Dipesan</p>
+          <p class="text-3xl font-bold text-slate-800"><?= esc($totalMobil) ?></p>
+        </div>
+      </div>
+      <div class="card p-6 flex items-center gap-4">
+        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+          <i class="fas fa-spinner fa-spin"></i>
+        </div>
+        <div>
+          <p class="text-slate-500 text-sm">Reservasi Berjalan</p>
+          <p class="text-3xl font-bold text-slate-800"><?= esc($totalBerjalan) ?></p>
+        </div>
+      </div>
     </section>
 
 
     <!-- Tabel Reservasi -->
     <section class="overflow-x-auto">
-      <table class="min-w-full bg-white shadow-md rounded-lg">
-        <thead class="bg-gray-100 text-xs text-gray-600 uppercase">
+      <table class="min-w-full card overflow-hidden">
+        <thead class="bg-slate-50 text-xs text-slate-600 uppercase">
   <tr>
     <th class="px-6 py-3 text-left">Nama Acara</th>
+    <th class="px-6 py-3 text-left">Pemesan</th>
     <th class="px-6 py-3 text-left">Tipe</th>
     <th class="px-6 py-3 text-left">Tanggal</th>
     <th class="px-6 py-3 text-left">Status</th>
     <th class="px-6 py-3"></th> <!-- Kolom untuk tombol -->
   </tr>
 </thead>
-<tbody class="text-sm text-gray-700 divide-y divide-gray-200">
+<tbody class="text-sm text-slate-700 divide-y divide-gray-200">
   <?php if (!empty($bookings)): ?>
     <?php foreach ($bookings as $booking): ?>
       <tr class="bg-white">
         <td class="px-6 py-4"><?= esc($booking['acara']) ?></td>
+        <td class="px-6 py-4">
+          <div class="font-medium text-slate-800"><?= esc($booking['pemesan_nama'] ?? '—') ?></div>
+          <div class="text-xs text-slate-500"><?= esc($booking['pemesan_divisi'] ?? '') ?></div>
+        </td>
         <td class="px-6 py-4"><?= esc($booking['tipe']) ?></td>
         <td class="px-6 py-4"><?= esc($booking['tanggal']) ?></td>
         <td class="px-6 py-4">
           <?php
             $status = strtolower($booking['status']);
             $badgeClass = match ($status) {
-              'pending' => 'bg-yellow-200 text-yellow-700',
-              'accepted' => 'bg-green-200 text-green-700',
-              'rejected' => 'bg-red-200 text-red-600',
-              default => 'bg-gray-200 text-gray-700',
+              'pending' => 'badge bg-yellow-50 text-yellow-700 border-yellow-200',
+              'accepted' => 'badge bg-green-50 text-green-700 border-green-200',
+              'rejected' => 'badge bg-red-50 text-red-600 border-red-200',
+              default => 'badge',
             };
           ?>
-          <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold <?= $badgeClass ?>">
-            <?= ucfirst($status) ?>
-          </span>
+          <span class="<?= $badgeClass ?>"><?= ucfirst($status) ?></span>
         </td>
         <td class="px-6 py-4">
-          <a href="<?= base_url('admin/booking/detail/' . $booking['id']) ?>" 
-             class="text-blue-600 border border-blue-600 rounded-full px-3 py-1 hover:bg-blue-50 text-xs">
-            Detail
-          </a>
+           <?php if (($booking['tipe'] ?? '') === 'Reservasi Mobil'): ?>
+            <a href="<?= base_url('admin/car/detailMobil/' . $booking['id']) ?>" class="btn-primary text-xs">Detail</a>
+          <?php else: ?>
+            <a href="<?= base_url('admin/booking/detail/' . $booking['id']) ?>" class="btn-primary text-xs">Detail</a>
+          <?php endif; ?>
         </td>
       </tr>
     <?php endforeach; ?>
@@ -80,5 +89,4 @@
       </table>
     </section>
   </main>
-</body>
 <?= $this->endSection() ?>
