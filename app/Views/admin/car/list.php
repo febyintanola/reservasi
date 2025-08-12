@@ -19,7 +19,7 @@
 <?= $this->section('content') ?>
 
 <main class="max-w-7xl mx-auto px-4 py-6">
-    <h1 class="text-center font-semibold text-lg mb-6 text-black">Daftar Booking Mobil</h1>
+    <h1 class="text-center font-semibold text-lg mb-6 text-black">Daftar Driver</h1>
 
     <?php if (session()->getFlashdata('success')): ?>
         <div class="mb-4 rounded-md bg-green-50 border border-green-200 text-green-800 px-4 py-2 text-sm">
@@ -33,39 +33,39 @@
     <?php endif; ?>
 
     <section class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-6 max-w-5xl mx-auto">
-        <?php if (!empty($bookings)): ?>
-            <?php foreach ($bookings as $b): ?>
+        <?php if (!empty($drivers)): ?>
+            <?php foreach ($drivers as $d): ?>
+                <?php 
+                    $fotoPath = !empty($d['foto_url']) ? base_url($d['foto_url']) : 'https://via.placeholder.com/160x120?text=Driver';
+                ?>
                 <article class="border rounded-md overflow-hidden bg-white shadow-sm">
+                    <div class="w-full h-32 bg-gray-100 overflow-hidden flex items-center justify-center">
+                        <img src="<?= esc($fotoPath) ?>" alt="Foto <?= esc($d['nama']) ?>" class="object-cover w-full h-full"/>
+                    </div>
                     <div class="p-3 text-black text-sm space-y-1">
-                        <p class="font-semibold text-base"><?= esc($b['nama']) ?></p>
-                        <p class="text-gray-600 text-xs">Tanggal: <?= esc($b['tanggal_pergi']) ?> - <?= esc($b['tanggal_pulang']) ?></p>
-                        <p class="text-gray-600 text-xs">Tujuan: <?= esc($b['tujuan']) ?></p>
-                        <p class="text-gray-600 text-xs">Keperluan: <?= esc($b['keperluan']) ?></p>
-                        <p>
-                            <span class="px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wide 
-                                <?php
-                                $status = $b['status'] ?? 'pending';
-                                echo $status === 'accepted' ? 'bg-green-200 text-green-800' : ($status === 'rejected' ? 'bg-red-200 text-red-800' : 'bg-yellow-200 text-yellow-800');
-                                ?>">
-                                <?= esc($status) ?>
+                        <p class="font-semibold text-base truncate" title="<?= esc($d['nama']) ?>"><?= esc($d['nama']) ?></p>
+                        <p class="text-gray-600 text-xs">No HP: <?= esc($d['no_hp'] ?? '-') ?></p>
+                        <p class="flex items-center gap-1">
+                            <?php $st = $d['status'] ?? 'Available'; ?>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wide <?= $st==='Available' ? 'bg-green-200 text-green-800' : 'bg-gray-300 text-gray-700' ?>">
+                                <?= esc($st) ?>
                             </span>
                         </p>
                         <div class="pt-2 flex gap-2">
-                            <a href="<?= base_url('admin/car/detail/' . $b['id']) ?>" class="inline-block bg-gray-200 hover:bg-gray-300 text-xs px-3 py-1 rounded">Detail</a>
-                            <a href="<?= base_url('admin/car/edit/' . $b['id']) ?>" class="inline-block bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 rounded">Edit</a>
+                            <a href="<?= base_url('admin/driver/edit/' . $d['id']) ?>" class="inline-block bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 rounded">Edit</a>
                         </div>
                     </div>
                 </article>
             <?php endforeach; ?>
         <?php else: ?>
-            <p class="col-span-3 text-center text-gray-500">Belum ada booking mobil.</p>
+            <p class="col-span-3 text-center text-gray-500">Belum ada driver.</p>
         <?php endif; ?>
     </section>
 
     <div class="flex justify-center mt-8">
-        <a href="<?= base_url('admin/car/tambah') ?>" 
-           class="bg-gray-900 text-white text-sm px-5 py-2 rounded flex items-center space-x-2">
-            <span>Tambahkan Booking Mobil</span>
+    <a href="<?= base_url('admin/driver/tambah') ?>" 
+       class="bg-gray-900 text-white text-sm px-5 py-2 rounded flex items-center space-x-2">
+        <span>Tambahkan Driver</span>
             <i class="fas fa-plus"></i>
         </a>
     </div>

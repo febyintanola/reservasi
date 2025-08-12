@@ -11,81 +11,59 @@
 			<?= nl2br(esc(session()->getFlashdata('error'))) ?>
 		</div>
 	<?php endif; ?>
-	<h1 class="text-center font-semibold text-lg mb-6">Tambah Booking Mobil (Manual)</h1>
+	<h1 class="text-center font-semibold text-lg mb-6">Tambah Driver</h1>
 
-	<form action="<?= base_url('admin/car/store') ?>" method="POST" class="space-y-6" autocomplete="off">
+	<form action="<?= base_url('admin/driver/store') ?>" method="POST" class="space-y-6" autocomplete="off" enctype="multipart/form-data">
 		<?= csrf_field() ?>
+
+        <div class="mb-2 relative w-24 h-24 mx-auto">
+            <!-- Foto Profil -->
+            <img id="previewFoto" src="<?= esc($profile['foto_url'] ?? 'https://via.placeholder.com/96') ?>"
+             alt="User profile picture"
+             class="w-24 h-24 rounded-full border border-gray-300 object-cover"/>
+
+             <!--Tombol Upload Foto-->
+            <label for="foto" class="absolute bottom-0 right-0 cursor-pointer bg-black bg-opacity-50 text-white text-xs rounded px-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 11l3 3L20.5 5.5a2.121 2.121 0 00-3-3L9 11z"/>
+                </svg>
+            </label>
+            <input type="file" name="foto" id="foto" class="hidden" accept="image/*"/>
+        </div>
 		<div>
 			<label class="block text-sm mb-1 text-black" for="nama">Nama</label>
 			<input name="nama" id="nama" type="text" class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black" required />
 		</div>
 		<div>
-			<label class="block text-sm mb-1 text-black" for="tujuan">Tujuan</label>
-			<input name="tujuan" id="tujuan" type="text" class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black" required />
-		</div>
-		<div>
-			<label class="block text-sm mb-1 text-black" for="keperluan">Keperluan</label>
-			<select name="keperluan" id="keperluan" class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black" required>
-				<option disabled selected>Pilih keperluan</option>
-				<option value="Dinas">Dinas</option>
-				<option value="Proyek">Proyek</option>
-			</select>
-		</div>
-		<div id="proyek-fields" class="space-y-4 hidden">
-			<div>
-				<label class="block text-sm mb-1 text-black" for="nama_pekerjaan">Nama Pekerjaan</label>
-				<input name="nama_pekerjaan" id="nama_pekerjaan" type="text" class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm" />
-			</div>
-			<div>
-				<label class="block text-sm mb-1 text-black" for="project_costing">Project Costing</label>
-				<input name="project_costing" id="project_costing" type="text" class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm" />
-			</div>
-			<div>
-				<label class="block text-sm mb-1 text-black" for="task_number">Task Number</label>
-				<input name="task_number" id="task_number" type="text" class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm" />
-			</div>
-			<div>
-				<label class="block text-sm mb-1 text-black" for="expenditure_type">Expenditure Type</label>
-				<input name="expenditure_type" id="expenditure_type" type="text" class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm" />
-			</div>
-			<div>
-				<label class="block text-sm mb-1 text-black" for="expenditure_org">Expenditure Org</label>
-				<input name="expenditure_org" id="expenditure_org" type="text" class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm" />
-			</div>
-		</div>
-		<div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-			<div>
-				<label class="block text-sm mb-1 text-black" for="tanggal_pergi">Tanggal Pergi</label>
-				<input name="tanggal_pergi" id="tanggal_pergi" type="date" class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm" required />
-			</div>
-			<div>
-				<label class="block text-sm mb-1 text-black" for="tanggal_pulang">Tanggal Pulang</label>
-				<input name="tanggal_pulang" id="tanggal_pulang" type="date" class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm" required />
-			</div>
-		</div>
-		<div>
-			<label class="block text-sm mb-1 text-black" for="pengikut">Pengikut (pisahkan dengan koma)</label>
-			<textarea name="pengikut" id="pengikut" rows="2" class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm"></textarea>
+			<label class="block text-sm mb-1 text-black" for="no_hp">No HP</label>
+			<input name="no_hp" id="no_hp" type="text" class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm" />
 		</div>
 		<div>
 			<label class="block text-sm mb-1 text-black" for="status">Status</label>
-			<select name="status" id="status" class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm" required>
-				<option value="pending" selected>Pending</option>
-				<option value="accepted">Accepted</option>
-				<option value="rejected">Rejected</option>
+			<select name="status" id="status" class="w-full rounded-md border border-gray-300 px-4 py-2 text-sm">
+				<option value="Available">Available</option>
+				<option value="On Duty">On Duty</option>
 			</select>
 		</div>
 		<div class="flex justify-center space-x-12 mt-8">
-			<a class="text-black text-sm" href="<?= base_url('admin/car') ?>">Batal</a>
+			<a class="text-black text-sm" href="<?= base_url('admin/driver') ?>">Batal</a>
 			<button class="bg-black text-white text-sm rounded-md px-6 py-2" type="submit">Submit</button>
 		</div>
 	</form>
 </main>
-<script>
-document.getElementById('keperluan').addEventListener('change', function(){
-  const f = document.getElementById('proyek-fields');
-  if(this.value === 'Proyek'){ f.classList.remove('hidden'); } else { f.classList.add('hidden'); }
-});
-</script>
 </body>
+<script>
+  const inputFoto = document.getElementById('foto');
+  const previewFoto = document.getElementById('previewFoto');
+
+  inputFoto.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (evt) {
+      previewFoto.src = evt.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+</script>
 <?= $this->endSection() ?>

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title><?= $title ?? 'SIREMO' ?></title>
+  <title><?= $title ?? 'RuMa' ?></title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -47,9 +47,20 @@
     </main>
   </div>
 </body>
- <script>
-  // Header scripts placeholder
-  </script>
+<script>
+  const inputFoto = document.getElementById('foto');
+  const previewFoto = document.getElementById('previewFoto');
+
+  inputFoto.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (evt) {
+      previewFoto.src = evt.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+</script>
 
 
 </html>

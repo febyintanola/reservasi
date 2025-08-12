@@ -60,11 +60,11 @@ $isProfile = ($uri === 'admin/profile');
         <div x-show="submenuOpen && open" class="pl-6 space-y-1 transition-all duration-200">
           <a href="<?= base_url('admin/ruang') ?>" class="nav-link" data-active="<?= $isRuang ? 'true' : 'false' ?>">
             <i class="fas fa-door-open text-[18px]"></i>
-            <span x-show="open">Reservasi Ruang</span>
+            <span x-show="open">List Ruang</span>
           </a>
-          <a href="<?= base_url('admin/car') ?>" class="nav-link" data-active="<?= $isCar ? 'true' : 'false' ?>">
+          <a href="<?= base_url('admin/driver') ?>" class="nav-link" data-active="<?= $isCar ? 'true' : 'false' ?>">
             <i class="fas fa-car-side text-[18px]"></i>
-            <span x-show="open">Reservasi Mobil</span>
+            <span x-show="open">List Driver</span>
           </a>
         </div>
 

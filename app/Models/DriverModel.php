@@ -6,5 +6,5 @@ use CodeIgniter\Model;
 class DriverModel extends Model
 {
     protected $table = 'drivers';
-    protected $allowedFields = ['nama', 'no_hp'];
+    protected $allowedFields = ['nama', 'no_hp', 'foto_url', 'status'];
 } 

@@ -26,7 +26,7 @@
             <input type="text" name="mobil_plat" value="<?= esc($assignment['mobil_plat'] ?? '') ?>" class="w-full border rounded px-3 py-2" placeholder="Contoh: B 1234 CD" required />
         </div>
         <div class="flex gap-3 mt-6">
-            <a href="<?= base_url('admin/car/detail/' . ($booking['id'] ?? '')) ?>" class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400 text-gray-800">Batal</a>
+            <a href="<?= base_url('/admin/car/detailMobil/' . ($booking['id'] ?? '')) ?>" class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400 text-gray-800">Batal</a>
             <button type="submit" class="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white">Simpan Assign</button>
         </div>
     </form>

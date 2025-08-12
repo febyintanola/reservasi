@@ -63,6 +63,15 @@ $routes->group('admin', ['filter' => 'auth'], function($routes) {
         $routes->get('car/assign/(:num)', 'CarController::assignForm/$1');
         $routes->post('car/assign_save/(:num)', 'CarController::assignSave/$1');
         $routes->get('mobil', 'Admin\MobilController::index');
+    // Admin Car bookings list & CRUD
+    $routes->get('car', 'CarController::adminIndex');
+    $routes->get('car/detail/(:num)', 'CarController::detail/$1');
+        // Driver management
+        $routes->get('driver', 'CarController::driverList');
+        $routes->get('driver/tambah', 'CarController::driverCreate');
+        $routes->post('driver/store', 'CarController::driverStore');
+        $routes->get('driver/edit/(:num)', 'CarController::driverEdit/$1');
+        $routes->post('driver/update/(:num)', 'CarController::driverUpdate/$1');
         $routes->get('ruang', 'RoomController::adminIndex');
         $routes->get('ruang/create', 'RoomController::create');
         $routes->get('ruang/tambah', 'RoomController::create');
