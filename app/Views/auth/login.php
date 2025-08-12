@@ -50,17 +50,28 @@
         />
 
         <label for="password" class="block text-xs mb-1">Password</label>
-        <input
-          type="password"
-          name="password"
-          id="password"
-          required
-          class="w-full text-sm border border-gray-300 rounded-md px-3 py-2 mb-4 focus:outline-none focus:ring-1 focus:ring-gray-400"
-        />
+        <div class="relative mb-4">
+          <input
+            type="password"
+            name="password"
+            id="password"
+            required
+            class="w-full text-sm border border-gray-300 rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring-1 focus:ring-gray-400"
+          />
+          <button type="button" id="togglePassword" aria-label="Show password" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-gray-700">
+            <svg id="iconEye" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.644C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .638C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+            <svg id="iconEyeOff" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c1.742 0 3.393-.402 4.846-1.118M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.5a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.243 4.243L9.172 9.172" />
+            </svg>
+          </button>
+        </div>
 
         <div class="flex justify-between mb-4 text-sm">
           <a href="<?= base_url('/register') ?>" class="text-gray-600 underline">Register</a>
-          <a href="#" class="text-gray-400 cursor-not-allowed" title="Belum tersedia">Forgot Password?</a>
+          <a href="<?= base_url('/forgot-password') ?>" class="text-gray-600 hover:underline" title="Reset password">Forgot Password?</a>
         </div>
 
         <button
@@ -73,4 +84,20 @@
     </div>
   </div>
 </body>
+<script>
+  (function(){
+    const input = document.getElementById('password');
+    const btn = document.getElementById('togglePassword');
+    if(!input || !btn) return;
+    const eye = document.getElementById('iconEye');
+    const eyeOff = document.getElementById('iconEyeOff');
+    btn.addEventListener('click', ()=>{
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      eye.classList.toggle('hidden', !show);
+      eyeOff.classList.toggle('hidden', show);
+      btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    });
+  })();
+</script>
 </html>

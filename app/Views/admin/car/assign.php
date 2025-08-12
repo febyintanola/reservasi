@@ -16,6 +16,7 @@
                     </option>
                 <?php endforeach; ?>
             </select>
+            <p class="text-xs text-gray-500 mt-1">Hanya driver yang belum punya tugas pada rentang tanggal <?= esc($booking['tanggal_pergi'] ?? '-') ?> s/d <?= esc($booking['tanggal_pulang'] ?? '-') ?> yang ditampilkan.</p>
         </div>
         <div class="mb-4">
             <label class="block mb-1 font-semibold">Jenis Mobil</label>

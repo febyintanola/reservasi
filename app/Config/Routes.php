@@ -98,5 +98,11 @@ $routes->get('/login', 'AuthController::login');
 $routes->post('/login', 'AuthController::loginProcess');
 $routes->get('/logout', 'AuthController::logout');
 
+// Forgot / Reset Password
+$routes->get('/forgot-password', 'AuthController::forgotPasswordForm');
+$routes->post('/forgot-password', 'AuthController::sendResetLink');
+$routes->get('/reset-password/(:segment)', 'AuthController::resetPasswordForm/$1');
+$routes->post('/reset-password', 'AuthController::resetPasswordProcess');
+
 // Unauthorized
 $routes->get('/unauthorized', 'AuthController::unauthorized');

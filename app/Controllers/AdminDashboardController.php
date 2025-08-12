@@ -3,6 +3,8 @@ namespace App\Controllers;
 
 use App\Models\CarModel;
 use App\Models\BookingRuangModel;
+use App\Models\DriverAssignmentModel;
+use App\Models\DriverModel;
 
 class AdminDashboardController extends BaseController {
     public function index()
@@ -105,10 +107,19 @@ class AdminDashboardController extends BaseController {
         if (!$mobil) {
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Booking mobil tidak ditemukan.');
         }
-        $data = [
-            'booking' => $mobil
-        ];
-        return view('admin/car/detail', $data);
+        // Ambil data assignment (jika sudah di-assign)
+        $assignmentModel = new DriverAssignmentModel();
+        $assignment = $assignmentModel->where('car_booking_id', $id)->first();
+        $driver = null;
+        if ($assignment && !empty($assignment['driver_id'])) {
+            $driverModel = new DriverModel();
+            $driver = $driverModel->find($assignment['driver_id']);
+        }
+        return view('admin/car/detail', [
+            'booking' => $mobil,
+            'assignment' => $assignment,
+            'driver' => $driver,
+        ]);
     }
 
     public function approve($id)

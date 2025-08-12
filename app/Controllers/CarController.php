@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Models\CarModel;
 use App\Models\DriverModel;
+use App\Models\DriverAssignmentModel;
 use CodeIgniter\Controller;
 use DateTime;
 
@@ -82,19 +83,40 @@ class CarController extends BaseController
         {
             $carModel = new CarModel();
             $driverModel = new DriverModel();
+            $assignmentModel = new DriverAssignmentModel();
             $booking = $carModel->find($id);
             if (!$booking) {
                 return redirect()->to('admin')->with('error', 'Booking mobil tidak ditemukan');
             }
-            $drivers = $driverModel->findAll();
-            // Ambil assignment jika sudah ada
-            $assignment = model('App\\Models\\DriverAssignmentModel')
-                ->where('car_booking_id', $id)
-                ->first();
+            $start = $booking['tanggal_pergi'];
+            $end   = $booking['tanggal_pulang'];
+
+            // Ambil assignment booking ini (jika edit)
+            $currentAssignment = $assignmentModel->where('car_booking_id', $id)->first();
+            $currentDriverId = $currentAssignment['driver_id'] ?? null;
+
+            // Cari driver yang sibuk di rentang tanggal ini (overlap hari)
+            $busyDriverIds = $assignmentModel
+                ->select('driver_assignments.driver_id')
+                ->join('car_bookings', 'car_bookings.id = driver_assignments.car_booking_id')
+                ->where('car_bookings.id !=', $id)
+                ->where('car_bookings.tanggal_pergi <=', $end)
+                ->where('car_bookings.tanggal_pulang >=', $start)
+                ->findColumn('driver_id');
+            $busyDriverIds = $busyDriverIds ? array_unique(array_filter($busyDriverIds)) : [];
+
+            // Ambil semua driver lalu filter yang available (kecuali driver yg sudah terpasang di booking ini tetap muncul)
+            $allDrivers = $driverModel->findAll();
+            $availableDrivers = array_values(array_filter($allDrivers, function($d) use ($busyDriverIds, $currentDriverId) {
+                if ($currentDriverId && $d['id'] == $currentDriverId) return true; // izinkan driver sekarang
+                return !in_array($d['id'], $busyDriverIds, true);
+            }));
+
             return view('admin/car/assign', [
-                'booking' => $booking,
-                'drivers' => $drivers,
-                'assignment' => $assignment
+                'booking'    => $booking,
+                'drivers'    => $availableDrivers,
+                'assignment' => $currentAssignment,
+                'busyIds'    => $busyDriverIds,
             ]);
         }
 
@@ -106,17 +128,21 @@ class CarController extends BaseController
             if (!$booking) {
                 return redirect()->to('admin')->with('error', 'Booking mobil tidak ditemukan');
             }
-            $driver_id = $this->request->getPost('driver_id');
+            $driver_id   = (int)$this->request->getPost('driver_id');
             $mobil_jenis = $this->request->getPost('mobil_jenis');
-            $mobil_plat = $this->request->getPost('mobil_plat');
+            $mobil_plat  = $this->request->getPost('mobil_plat');
 
-            $assignmentModel = model('App\\Models\\DriverAssignmentModel');
+            if (!$this->isDriverAvailable($driver_id, $booking['tanggal_pergi'], $booking['tanggal_pulang'], $id)) {
+                return redirect()->back()->withInput()->with('error', 'Driver tersebut sudah ditugaskan pada tanggal yang sama.');
+            }
+
+            $assignmentModel = new DriverAssignmentModel();
             $existing = $assignmentModel->where('car_booking_id', $id)->first();
             $dataAssign = [
                 'car_booking_id' => $id,
-                'driver_id' => $driver_id,
-                'mobil_jenis' => $mobil_jenis,
-                'mobil_plat' => $mobil_plat,
+                'driver_id'      => $driver_id,
+                'mobil_jenis'    => $mobil_jenis,
+                'mobil_plat'     => $mobil_plat,
             ];
             if ($existing) {
                 $assignmentModel->update($existing['id'], $dataAssign);
@@ -124,6 +150,27 @@ class CarController extends BaseController
                 $assignmentModel->insert($dataAssign);
             }
             return redirect()->to('admin/car/detailMobil/' . $id)->with('message', 'Driver & Mobil berhasil di-assign.');
+        }
+
+        /**
+         * Cek ketersediaan driver berdasarkan overlap tanggal (hari penuh).
+         * Jika ingin mendukung jam, perlu kolom tambahan jam_mulai/jam_selesai.
+         */
+        private function isDriverAvailable(int $driverId, string $start, string $end, int $currentBookingId = null): bool
+        {
+            if ($driverId <= 0) return false;
+            $assignmentModel = new DriverAssignmentModel();
+            $builder = $assignmentModel
+                ->select('driver_assignments.id')
+                ->join('car_bookings', 'car_bookings.id = driver_assignments.car_booking_id')
+                ->where('driver_assignments.driver_id', $driverId)
+                ->where('car_bookings.tanggal_pergi <=', $end)
+                ->where('car_bookings.tanggal_pulang >=', $start);
+            if ($currentBookingId) {
+                $builder->where('car_bookings.id !=', $currentBookingId);
+            }
+            $conflict = $builder->first();
+            return $conflict ? false : true;
         }
 
     /* ================= ADMIN (CRUD BOOKING MANUAL) ================= */
@@ -321,7 +368,27 @@ class CarController extends BaseController
         if (!$booking) {
             return redirect()->to('admin/car')->with('error', 'Data booking tidak ditemukan');
         }
-        return view('admin/car/detail', ['booking' => $booking]);
+        // Ambil data assignment & driver (jika ada)
+        try {
+            $assignmentModel = model('App\\Models\\DriverAssignmentModel');
+            $assignment = $assignmentModel->where('car_booking_id', $id)->first();
+        } catch (\Throwable $e) {
+            $assignment = null;
+        }
+        $driver = null;
+        if ($assignment && !empty($assignment['driver_id'])) {
+            try {
+                $driverModel = model('App\\Models\\DriverModel');
+                $driver = $driverModel->find($assignment['driver_id']);
+            } catch (\Throwable $e) {
+                $driver = null;
+            }
+        }
+        return view('admin/car/detail', [
+            'booking' => $booking,
+            'assignment' => $assignment,
+            'driver' => $driver,
+        ]);
     }
 
 }

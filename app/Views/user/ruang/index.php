@@ -7,18 +7,20 @@
 
     <!-- Form Pencarian -->
     <form class="card max-w-xl mx-auto mb-6 p-5" id="checkForm" onsubmit="event.preventDefault(); checkAvailability();">
-      <div class="grid sm:grid-cols-2 gap-4">
+      <div class="grid gap-4">
         <div>
           <label class="block text-sm mb-1 text-slate-700">Hari/Tanggal</label>
           <input type="date" name="tanggal" id="tanggal" class="w-full rounded-md border border-slate-300 px-3 py-2" required>
         </div>
-        <div>
-          <label class="block text-sm mb-1 text-slate-700">Jam Mulai</label>
-          <input type="time" name="jam_mulai" id="jam_mulai" class="w-full rounded-md border border-slate-300 px-3 py-2" required>
-        </div>
-        <div>
-          <label class="block text-sm mb-1 text-slate-700">Jam Selesai</label>
-          <input type="time" name="jam_selesai" id="jam_selesai" class="w-full rounded-md border border-slate-300 px-3 py-2" required>
+        <div class="flex flex-col sm:flex-row gap-4">
+          <div class="flex-1">
+            <label class="block text-sm mb-1 text-slate-700">Jam Mulai</label>
+            <input type="time" name="jam_mulai" id="jam_mulai" class="w-full rounded-md border border-slate-300 px-3 py-2" required>
+          </div>
+          <div class="flex-1">
+            <label class="block text-sm mb-1 text-slate-700">Jam Selesai</label>
+            <input type="time" name="jam_selesai" id="jam_selesai" class="w-full rounded-md border border-slate-300 px-3 py-2" required>
+          </div>
         </div>
       </div>
       <div class="flex justify-end mt-4">

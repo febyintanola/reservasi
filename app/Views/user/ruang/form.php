@@ -33,7 +33,8 @@
 
     <div>
       <label class="block text-xs mb-1">Jumlah Peserta</label>
-      <input name="peserta" type="number" min="1" class="w-full border border-gray-300 rounded-md px-3 py-1 text-xs focus:ring-gray-400" required />
+      <input id="peserta" name="peserta" type="number" min="1" max="<?= esc($room['kapasitas']) ?>" class="w-full border border-gray-300 rounded-md px-3 py-1 text-xs focus:ring-gray-400" required />
+      <p id="peserta-warning" class="text-[10px] mt-1 text-red-600 hidden">Maksimal peserta: <?= esc($room['kapasitas']) ?> orang.</p>
     </div>
 
     <!-- Jenis Acara: Umum atau Overhaul -->
@@ -94,6 +95,22 @@
 </main>
 
 <script>
+  // Kapasitas ruangan untuk validasi peserta
+  const kapasitasRuang = <?= (int) ($room['kapasitas'] ?? 0) ?>;
+  const pesertaInput = document.getElementById('peserta');
+  const pesertaWarning = document.getElementById('peserta-warning');
+
+  function validatePeserta() {
+    const val = parseInt(pesertaInput.value, 10);
+    if (!isNaN(val) && val > kapasitasRuang) {
+      pesertaInput.value = kapasitasRuang;
+      pesertaWarning.classList.remove('hidden');
+    } else if (!isNaN(val) && val >= 1) {
+      pesertaWarning.classList.add('hidden');
+    }
+  }
+  pesertaInput?.addEventListener('input', validatePeserta);
+
   // Toggle field Overhaul
   document.getElementById('jenis_acara').addEventListener('change', function () {
     const value = this.value;

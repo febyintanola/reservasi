@@ -76,6 +76,20 @@
 						</span>
 					</td>
 				</tr>
+				<?php if (!empty($assignment)): ?>
+				<tr>
+					<th class="px-4 py-2">Driver</th>
+					<td class="px-4 py-2"><?= esc($driver['nama'] ?? '-') ?><?= isset($driver['no_hp']) ? ' ('.esc($driver['no_hp']).')' : '' ?></td>
+				</tr>
+				<tr>
+					<th class="px-4 py-2">Jenis Mobil</th>
+					<td class="px-4 py-2"><?= esc($assignment['mobil_jenis'] ?? '-') ?></td>
+				</tr>
+				<tr>
+					<th class="px-4 py-2">No Plat</th>
+					<td class="px-4 py-2"><?= esc($assignment['mobil_plat'] ?? '-') ?></td>
+				</tr>
+				<?php endif; ?>
 			</tbody>
 		</table>
 
@@ -96,8 +110,8 @@
 			</form>
 			<?php endif; ?>
 
-			<!-- Tombol Assign Driver & Mobil -->
-			<?php if (($booking['status'] ?? '') === 'accepted' && (empty($booking['driver_id']) || empty($booking['car_id']))): ?>
+			<!-- Tombol Assign Driver & Mobil: hanya tampil jika status accepted & belum ada assignment -->
+			<?php if (($booking['status'] ?? '') === 'accepted' && empty($assignment)): ?>
 				<a href="<?= base_url('admin/car/assign/' . ($booking['id'] ?? '')) ?>" class="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm">Assign Driver & Mobil</a>
 			<?php endif; ?>
 		</div>
