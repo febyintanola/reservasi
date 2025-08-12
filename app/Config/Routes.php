@@ -53,11 +53,15 @@ $routes->group('admin', ['filter' => 'auth'], function($routes) {
         $routes->get('booking/detail/(:num)', 'AdminDashboardController::detail/$1');
         $routes->post('booking/approve/(:num)', 'AdminDashboardController::approve/$1');
         $routes->post('booking/reject/(:num)', 'AdminDashboardController::reject/$1');
-        $routes->get('car/detailMobil/(:num)', 'AdminDashboardController::detailMobil/$1');
-        $routes->post('car/approve/(:num)','AdminDashboardController::approve/$1');
-        $routes->post('car/reject/(:num)','AdminDashboardController::reject/$1');
+    $routes->get('car/detailMobil/(:num)', 'AdminDashboardController::detailMobil/$1');
+    $routes->post('car/approve/(:num)','AdminDashboardController::approveCar/$1');
+    $routes->post('car/reject/(:num)','AdminDashboardController::rejectCar/$1');
 
         // Tambahkan route admin lainnya di sini jika ada
+
+        // Assign driver & mobil
+        $routes->get('car/assign/(:num)', 'CarController::assignForm/$1');
+        $routes->post('car/assign_save/(:num)', 'CarController::assignSave/$1');
         $routes->get('mobil', 'Admin\MobilController::index');
         $routes->get('ruang', 'RoomController::adminIndex');
         $routes->get('ruang/create', 'RoomController::create');

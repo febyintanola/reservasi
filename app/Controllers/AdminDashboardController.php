@@ -137,6 +137,34 @@ class AdminDashboardController extends BaseController {
             ->with('message', 'Booking telah ditolak');
     }
 
+    // APPROVE booking mobil
+    public function approveCar($id)
+    {
+        $carModel = new CarModel();
+        $booking = $carModel->find($id);
+        if (!$booking) {
+            return redirect()->to(base_url('admin'))
+                ->with('error', 'Booking mobil tidak ditemukan');
+        }
+        $carModel->update($id, ['status' => 'accepted']);
+        return redirect()->to(base_url('admin/car/detailMobil/' . $id))
+            ->with('message', 'Booking mobil disetujui');
+    }
+
+    // REJECT booking mobil
+    public function rejectCar($id)
+    {
+        $carModel = new CarModel();
+        $booking = $carModel->find($id);
+        if (!$booking) {
+            return redirect()->to(base_url('admin'))
+                ->with('error', 'Booking mobil tidak ditemukan');
+        }
+        $carModel->update($id, ['status' => 'rejected']);
+        return redirect()->to(base_url('admin/car/detailMobil/' . $id))
+            ->with('message', 'Booking mobil ditolak');
+    }
+
     protected CarModel $carModel;
     
     public function __construct()

@@ -24,7 +24,9 @@ class CarModel extends Model
         'task_number',
         'expenditure_type',
         'expenditure_org',
-        'status'              // tambahkan jika ada field status di tabel
+        'status',             // status booking mobil
+        'driver_id',          // relasi ke driver yang ditugaskan
+        'car_id'              // relasi ke mobil (jika ada tabel daftar mobil)
     ];
 
     public function getByUser($userId)
@@ -33,6 +35,7 @@ class CarModel extends Model
     }
     public function getAllBookings()
     {
-        return $this->orderBy('tanggal', 'DESC')->findAll();
+    // gunakan tanggal_pergi sebagai acuan urutan
+    return $this->orderBy('tanggal_pergi', 'DESC')->findAll();
     }
 }

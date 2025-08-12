@@ -83,17 +83,22 @@
 			<a href="<?= base_url('/admin') ?>" class="text-blue-600 hover:underline text-sm">← Kembali</a>
 
 			<?php if (($booking['status'] ?? '') !== 'accepted'): ?>
-			<form action="<?= base_url('admin/car/approve/' . ($booking['id'] ?? '')) ?>" method="post" onsubmit="return confirm('Setujui booking ini?');">
+			<form action="<?= base_url('admin/car/approve/' . ($booking['id'] ?? '')) ?>" method="post" onsubmit="return confirm('Setujui booking mobil ini?');">
 				<?= csrf_field() ?>
 				<button type="submit" class="px-4 py-2 rounded bg-green-600 hover:bg-green-700 text-white text-sm">Setujui</button>
 			</form>
 			<?php endif; ?>
 
 			<?php if (($booking['status'] ?? '') !== 'rejected'): ?>
-			<form action="<?= base_url('admin/car/reject/' . ($booking['id'] ?? '')) ?>" method="post" onsubmit="return confirm('Tolak booking ini?');">
+			<form action="<?= base_url('admin/car/reject/' . ($booking['id'] ?? '')) ?>" method="post" onsubmit="return confirm('Tolak booking mobil ini?');">
 				<?= csrf_field() ?>
 				<button type="submit" class="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white text-sm">Tolak</button>
 			</form>
+			<?php endif; ?>
+
+			<!-- Tombol Assign Driver & Mobil -->
+			<?php if (($booking['status'] ?? '') === 'accepted' && (empty($booking['driver_id']) || empty($booking['car_id']))): ?>
+				<a href="<?= base_url('admin/car/assign/' . ($booking['id'] ?? '')) ?>" class="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm">Assign Driver & Mobil</a>
 			<?php endif; ?>
 		</div>
 	</div>

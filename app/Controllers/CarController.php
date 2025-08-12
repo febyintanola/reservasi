@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Models\CarModel;
+use App\Models\DriverModel;
 use CodeIgniter\Controller;
 use DateTime;
 
@@ -59,4 +60,70 @@ class CarController extends BaseController
 
         return view('user/car/konfirmasi', ['data' => $data]);
     }
+    //Admin 
+    public function tambahdriver()
+    {
+        $model = new DriverModel();
+
+        $data = [
+            'nama'      => $this->request->getPost('nama'),
+            'sim'       => $this->request->getPost('sim'),
+            'no_hp'     => $this->request->getPost('no_hp'),
+            'status'    => $this->request->getPost('status'),
+        ];
+
+        $model->insert($data);
+
+        return redirect()->to('/admin/driver')->with('success', 'Driver berhasil ditambahkan.');
+    }
+
+        // Tampilkan form assign driver & mobil
+        public function assignForm($id)
+        {
+            $carModel = new CarModel();
+            $driverModel = new DriverModel();
+            $booking = $carModel->find($id);
+            if (!$booking) {
+                return redirect()->to('admin')->with('error', 'Booking mobil tidak ditemukan');
+            }
+            $drivers = $driverModel->findAll();
+            // Ambil assignment jika sudah ada
+            $assignment = model('App\\Models\\DriverAssignmentModel')
+                ->where('car_booking_id', $id)
+                ->first();
+            return view('admin/car/assign', [
+                'booking' => $booking,
+                'drivers' => $drivers,
+                'assignment' => $assignment
+            ]);
+        }
+
+        // Proses simpan assign driver & mobil
+        public function assignSave($id)
+        {
+            $carModel = new CarModel();
+            $booking = $carModel->find($id);
+            if (!$booking) {
+                return redirect()->to('admin')->with('error', 'Booking mobil tidak ditemukan');
+            }
+            $driver_id = $this->request->getPost('driver_id');
+            $mobil_jenis = $this->request->getPost('mobil_jenis');
+            $mobil_plat = $this->request->getPost('mobil_plat');
+
+            $assignmentModel = model('App\\Models\\DriverAssignmentModel');
+            $existing = $assignmentModel->where('car_booking_id', $id)->first();
+            $dataAssign = [
+                'car_booking_id' => $id,
+                'driver_id' => $driver_id,
+                'mobil_jenis' => $mobil_jenis,
+                'mobil_plat' => $mobil_plat,
+            ];
+            if ($existing) {
+                $assignmentModel->update($existing['id'], $dataAssign);
+            } else {
+                $assignmentModel->insert($dataAssign);
+            }
+            return redirect()->to('admin/car/detailMobil/' . $id)->with('message', 'Driver & Mobil berhasil di-assign.');
+        }
+
 }
