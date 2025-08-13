@@ -106,3 +106,13 @@ $routes->post('/reset-password', 'AuthController::resetPasswordProcess');
 
 // Unauthorized
 $routes->get('/unauthorized', 'AuthController::unauthorized');
+
+// === ROUTES UNTUK DRIVER ===
+$routes->group('driver', ['filter' => 'auth'], function($routes) {
+    // Khusus role driver
+    $routes->group('', ['filter' => 'role:driver'], function($routes) {
+        $routes->get('dashboard', 'DriverDashboardController::index');
+        $routes->get('jobs/(:num)', 'DriverDashboardController::show/$1');
+        $routes->post('jobs/(:num)/status', 'DriverDashboardController::updateStatus/$1');
+    });
+});

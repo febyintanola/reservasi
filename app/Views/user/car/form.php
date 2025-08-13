@@ -53,7 +53,7 @@
       <input id="tujuan" name="tujuan" type="text" required
              class="w-full rounded border border-gray-300 px-3 py-2 placeholder:text-sm focus:ring-1 focus:ring-black focus:border-black" />
     </div>
-
+    <!-- Keperluan : Dinas atau proyek -->
     <div>
       <label for="keperluan" class="block mb-1 text-black text-sm">Keperluan</label>
       <select id="keperluan" name="keperluan" required

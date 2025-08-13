@@ -1,0 +1,240 @@
+<?php
+
+namespace App\Controllers;
+
+use App\Models\CarModel;
+use App\Models\DriverAssignmentModel;
+use App\Models\BookingRuangModel;
+use App\Models\UserProfileModel;
+use CodeIgniter\HTTP\RedirectResponse;
+
+class DriverDashboardController extends BaseController
+{
+	protected CarModel $carModel;
+	protected DriverAssignmentModel $assignmentModel;
+	protected BookingRuangModel $roomBookingModel;
+	protected UserProfileModel $profileModel;
+
+	public function __construct()
+	{
+		$this->carModel = new CarModel();
+		$this->assignmentModel = new DriverAssignmentModel();
+		$this->roomBookingModel = new BookingRuangModel();
+		$this->profileModel = new UserProfileModel();
+	}
+
+	/**
+	 * Dashboard utama driver.
+	 */
+	public function index()
+	{
+		$driverUserId = session('user_id');
+		if (!$driverUserId) {
+			return redirect()->to('/login');
+		}
+
+		// Ambil semua assignment yang terkait driver ini.
+		$allJobs = $this->getDriverJobs($driverUserId);
+
+		// Kategorisasi: hari ini, berjalan (running), riwayat (history)
+		$todayDate = date('Y-m-d');
+		$jobsToday = [];
+		$jobsRunning = [];
+		$jobsHistory = [];
+
+		foreach ($allJobs as $job) {
+			$start = $job['tanggal_pergi'];
+			$end   = $job['tanggal_pergi']; // fallback jika tidak ada tanggal_pulang
+			if (!empty($job['tanggal_pulang'])) {
+				$end = $job['tanggal_pulang'];
+			}
+			$status = strtolower($job['status'] ?? '');
+			$isRunning = ($status === 'ongoing') || ($start <= $todayDate && $end >= $todayDate && in_array($status, ['accepted','approved','ongoing']));
+			$isToday = ($start <= $todayDate && $end >= $todayDate);
+			$isHistory = ($end < $todayDate) || in_array($status, ['done','rejected']);
+
+			if ($isRunning) {
+				$jobsRunning[] = $job;
+				continue; // jangan duplikasi di today
+			}
+			if ($isHistory) {
+				$jobsHistory[] = $job;
+				continue;
+			}
+			if ($isToday) {
+				$jobsToday[] = $job;
+				continue;
+			}
+			// Jika bukan running / history / today (masa depan) masukkan ke today agar tetap terlihat nantinya? Atau kategori future.
+			// Untuk sekarang kita treat sebagai today jika tanggal mulai == hari ini, jika masa depan abaikan.
+		}
+
+		$stats = [
+			'rooms'   => $this->countBookedRooms(),
+			'cars'    => $this->countAssignedCars($driverUserId),
+			'running' => $this->countRunning($driverUserId),
+		];
+
+		$taskSummary = [
+			'today'   => count($jobsToday),
+			'running' => count($jobsRunning),
+			'history' => count($jobsHistory),
+		];
+
+		return view('driver/dashboard', [
+			'stats' => $stats,
+			'jobsToday' => $jobsToday,
+			'jobsRunning' => $jobsRunning,
+			'jobsHistory' => $jobsHistory,
+			'taskSummary' => $taskSummary,
+		]);
+	}
+
+	/**
+	 * Detail satu penugasan (booking mobil) berdasarkan driver assignment atau car booking id.
+	 */
+	public function show(int $id)
+	{
+		$driverUserId = session('user_id');
+		if (!$driverUserId) {
+			return redirect()->to('/login');
+		}
+
+		$assignment = $this->assignmentModel
+			->where('car_booking_id', $id)
+			->first();
+
+		if (!$assignment) {
+			return redirect()->to('driver/dashboard')->with('error', 'Penugasan tidak ditemukan');
+		}
+		if ((int)$assignment['driver_id'] !== (int)$driverUserId) {
+			return redirect()->to('/unauthorized');
+		}
+
+		$booking = $this->carModel->find($id);
+		if (!$booking) {
+			return redirect()->to('driver/dashboard')->with('error', 'Booking mobil tidak ditemukan');
+		}
+
+		// Ambil data pemesan
+		$pemesan = null;
+		try {
+			$pemesan = $this->profileModel
+				->select('user_profile.nama, users.email')
+				->join('users', 'users.id = user_profile.user_id', 'left')
+				->where('user_profile.user_id', $booking['user_id'])
+				->first();
+		} catch (\Throwable $e) {
+			$pemesan = null;
+		}
+
+		return view('driver/job_detail', [
+			'booking'    => $booking,
+			'assignment' => $assignment,
+			'pemesan'    => $pemesan,
+		]);
+	}
+
+	/**
+	 * Update status booking mobil (driver side). Status disimpan di tabel car_bookings.status.
+	 */
+	public function updateStatus(int $id)
+	{
+		if ($this->request->getMethod() !== 'post') {
+			return redirect()->to('driver/jobs/' . $id);
+		}
+		$driverUserId = session('user_id');
+		if (!$driverUserId) {
+			return redirect()->to('/login');
+		}
+		$assignment = $this->assignmentModel->where('car_booking_id', $id)->first();
+		if (!$assignment || (int)$assignment['driver_id'] !== (int)$driverUserId) {
+			return redirect()->to('/unauthorized');
+		}
+
+		$newStatus = strtolower(trim($this->request->getPost('status')));
+		$allowed   = ['accepted','ongoing','done','rejected'];
+		if (!in_array($newStatus, $allowed, true)) {
+			return redirect()->back()->with('error', 'Status tidak valid');
+		}
+
+		// Update status di booking mobil.
+		$this->carModel->update($id, ['status' => $newStatus]);
+
+		return redirect()->to('driver/jobs/' . $id)->with('message', 'Status diperbarui.');
+	}
+
+	/**
+	 * Ambil daftar pekerjaan (booking mobil) milik driver.
+	 */
+	protected function getDriverJobs(int $driverUserId): array
+	{
+		// Join driver_assignments -> car_bookings -> user_profile/users
+		$builder = $this->assignmentModel
+			->select('driver_assignments.id as assignment_id, car_bookings.id as booking_id, car_bookings.tanggal_pergi, car_bookings.tujuan, car_bookings.status, users.email, user_profile.nama')
+			->join('car_bookings', 'car_bookings.id = driver_assignments.car_booking_id')
+			->join('users', 'users.id = car_bookings.user_id', 'left')
+			->join('user_profile', 'user_profile.user_id = users.id', 'left')
+			->where('driver_assignments.driver_id', $driverUserId)
+			->orderBy('car_bookings.tanggal_pergi', 'ASC');
+		$rows = $builder->findAll();
+		return $rows ?: [];
+	}
+
+	/** Hitung jumlah booking ruang rapat yang approved (hari ini dan seterusnya). */
+	protected function countBookedRooms(): int
+	{
+		try {
+			$today = date('Y-m-d');
+			return (int)$this->roomBookingModel
+				->whereIn('status', ['approved','pending'])
+				->where('tanggal >=', $today)
+				->countAllResults();
+		} catch (\Throwable $e) {
+			return 0;
+		}
+	}
+
+	/** Hitung jumlah booking mobil yang sudah di-assign ke driver (accepted/ongoing). */
+	protected function countAssignedCars(int $driverUserId): int
+	{
+		try {
+			return (int)$this->assignmentModel
+				->select('driver_assignments.id')
+				->join('car_bookings', 'car_bookings.id = driver_assignments.car_booking_id')
+				->where('driver_assignments.driver_id', $driverUserId)
+				->whereIn('car_bookings.status', ['accepted','ongoing'])
+				->countAllResults();
+		} catch (\Throwable $e) {
+			return 0;
+		}
+	}
+
+	/** Hitung total reservasi berjalan (mobil dengan status ongoing + ruang sedang berjalan sekarang). */
+	protected function countRunning(int $driverUserId): int
+	{
+		$nowDate = date('Y-m-d');
+		$nowTime = date('H:i:s');
+		$runningCars = 0;
+		$runningRooms = 0;
+		try {
+			$runningCars = (int)$this->assignmentModel
+				->select('driver_assignments.id')
+				->join('car_bookings', 'car_bookings.id = driver_assignments.car_booking_id')
+				->where('driver_assignments.driver_id', $driverUserId)
+				->where('car_bookings.status', 'ongoing')
+				->countAllResults();
+		} catch (\Throwable $e) {}
+		try {
+			$runningRooms = (int)$this->roomBookingModel
+				->groupStart()
+					->where('tanggal', $nowDate)
+				->groupEnd()
+				->where('jam_mulai <=', $nowTime)
+				->where('jam_selesai >=', $nowTime)
+				->whereIn('status', ['approved','ongoing'])
+				->countAllResults();
+		} catch (\Throwable $e) {}
+		return $runningCars + $runningRooms;
+	}
+}
