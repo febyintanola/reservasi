@@ -40,6 +40,24 @@
             </span>
           </td>
         </tr>
+
+        <?php if(!empty($assignment)):?>
+          <tr>
+            <th class="px-4 py-2">Driver</th>
+            <td class="px-4 py-2">
+              <?= esc($driver['nama'] ?? '-') ?>
+              <?= isset($driver['no_hp']) && $driver['no_hp'] ? '(' . esc($driver['no_hp']) . ')' : '' ?>
+            </td>
+          </tr>
+          <tr>
+            <th class="px-4 py-2">Jenis Mobil</th>
+            <td class="px-4 py-2"><?= esc($assignment['jenis_mobil'] ?? '-') ?></td>
+          </tr>
+          <tr>
+            <th class="px-4 py-2">No Plat</th>
+            <td class="px-4 py-2"><?= esc($assignment['no_plat'] ?? '-') ?></td>
+          </tr>
+        <?php endif; ?>
       </tbody>
     </table>
     <a href="<?= base_url('history?jenis=mobil') ?>" class="inline-block mt-4 text-blue-600 hover:underline">← Kembali ke History</a>

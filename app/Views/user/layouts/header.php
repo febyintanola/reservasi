@@ -11,7 +11,7 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="flex bg-slate-50 min-h-screen">
+<body class="flex bg-white min-h-screen">
 <?php
 $hdrFotoUrl = 'https://via.placeholder.com/32';
 $uid = session('user_id');
@@ -33,12 +33,12 @@ if ($uid) {
 
   <!-- Main Content Area -->
   <div class="flex-1 flex flex-col">
-    <header class="app-header flex items-center justify-between px-4 py-3 bg-white">
-      <div class="flex items-center">
-        <span class="text-xl font-semibold text-slate-800">RuMa</span>
+    <header class="flex items-center justify-between px-4 py-3 border-b border-white bg-white">
+      <div class="flex-1 flex justify-center">
+        <div class="text-black text-base font-normal">RuMa</div>
       </div>
-      <a href="<?= base_url('/user/profile') ?>" class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden ring-1 ring-slate-200">
-        <img src="<?= esc($hdrFotoUrl) ?>" alt="Profil" class="w-9 h-9 object-cover" />
+      <a href="<?= base_url('/user/profile') ?>" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center ml-auto overflow-hidden">
+        <img src="<?= esc($hdrFotoUrl) ?>" alt="Profil" class="w-8 h-8 object-cover" />
       </a>
     </header>
 
@@ -48,7 +48,13 @@ if ($uid) {
   </div>
 </body>
  <script>
-  // Header scripts placeholder
+    // Toggle Sidebar
+    const toggleBtn = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('sidebar');
+
+    toggleBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('-ml-64');
+    });
   </script>
 
 

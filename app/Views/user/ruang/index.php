@@ -62,7 +62,7 @@
           data.forEach(room => {
             const button = room.tersedia
               ? `<a href="/ruang/booking-form?room=${room.id}&tanggal=${tanggal}&jam_mulai=${jamMulai}&jam_selesai=${jamSelesai}" class="btn-primary w-full justify-center mt-2">Pilih Ruang</a>`
-              : `<div class="badge w-full justify-center mt-2 text-slate-500">Tidak Tersedia</div>`;
+              : `<div class="badge w-full justify-center mt-2 text-red-600 bg-red-100 border border-red-300">Tidak Tersedia</div>`;
 
             const imageUrl = room.ruangrapat_url || 'https://via.placeholder.com/400x150?text=No+Image';
             const jenisRuang = room.jenis ? room.jenis : 'Jenis tidak diketahui';

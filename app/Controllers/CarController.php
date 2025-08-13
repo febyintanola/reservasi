@@ -391,4 +391,40 @@ class CarController extends BaseController
         ]);
     }
 
+    /**
+     * Tampilkan detail booking mobil untuk user (dengan assignment driver/mobil jika ada)
+     */
+    public function userDetail($id)
+    {
+        $carModel = new CarModel();
+        $booking = $carModel->find($id);
+        if (!$booking) {
+            return redirect()->to('history?jenis=mobil')->with('error', 'Data booking tidak ditemukan');
+        }
+
+        // Ambil data assignment & driver (jika ada)
+        $assignment = null;
+        $driver = null;
+        try {
+            $assignmentModel = model('App\\Models\\DriverAssignmentModel');
+            $assignment = $assignmentModel->where('car_booking_id', $id)->first();
+        } catch (\Throwable $e) {
+            $assignment = null;
+        }
+        if ($assignment && !empty($assignment['driver_id'])) {
+            try {
+                $driverModel = model('App\\Models\\DriverModel');
+                $driver = $driverModel->find($assignment['driver_id']);
+            } catch (\Throwable $e) {
+                $driver = null;
+            }
+        }
+
+        return view('user/car/detail', [
+            'booking'   => $booking,
+            'assigment' => $assigment,
+            'driver'    => $driver,
+        ]);
+    }
+
 }

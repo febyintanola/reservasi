@@ -35,7 +35,7 @@ if ($uid) {
       <nav class="space-y-1">
 
         <!-- Home -->
-        <a href="<?= base_url('/') ?>" class="nav-link" data-active="<?= uri_string() == '' ? 'true' : 'false' ?>">
+        <a href="<?= base_url('/') ?>" class="nav-link" data-active="<?= in_array(uri_string(), ['', 'home', 'dashboard']) ? 'true' : 'false' ?>">
           <i class="fas fa-home text-[20px]"></i>
           <span x-show="open">Home</span>
         </a>
