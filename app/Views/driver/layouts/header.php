@@ -16,7 +16,7 @@
         $uid = session('user_id');
         if ($uid){
             try{
-                $profileModel = model('App\\Models\\UserProfileMModel');
+                $profileModel = model('App\\Models\\UserProfileModel');
                 $p = $profileModel->where('user_id',$uid)->first();
                 if (!empty($p['foto_url'])){
                     $hdrFotoUrl=$p['foto_url'];
@@ -26,10 +26,6 @@
             }
         }
 ?>
-
-<!-- Sidebar-->
- <?= $this->include('driver/layouts/sidebar') ?>
-
 <!-- Main Content Area -->
  <div class="flex-1 flex flex-col">
     <header class="flex item-center justify-between px-4 py-3 border-b border-white bg-white">

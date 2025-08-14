@@ -87,6 +87,8 @@ class DriverDashboardController extends BaseController
 			'jobsRunning' => $jobsRunning,
 			'jobsHistory' => $jobsHistory,
 			'taskSummary' => $taskSummary,
+			// For backward compatibility with the view that expects `$jobs`
+			'jobs' => $allJobs,
 		]);
 	}
 
@@ -107,9 +109,31 @@ class DriverDashboardController extends BaseController
 		if (!$assignment) {
 			return redirect()->to('driver/dashboard')->with('error', 'Penugasan tidak ditemukan');
 		}
-		if ((int)$assignment['driver_id'] !== (int)$driverUserId) {
-			return redirect()->to('/unauthorized');
+		// Permission: allow if assignment.driver_id matches either current users.id (legacy)
+		// or matches drivers.id that is linked to this user via drivers.user_id
+		$allowed = ((int)$assignment['driver_id'] === (int)$driverUserId);
+		if (!$allowed) {
+			try {
+				$driverModel = model('App\\Models\\DriverModel');
+				$currentDriver = $driverModel->where('user_id', $driverUserId)->first();
+				if ($currentDriver && (int)$assignment['driver_id'] === (int)$currentDriver['id']) {
+					$allowed = true;
+				}
+				// Fallback: cocokkan berdasarkan nama profil vs nama driver yang ditugaskan
+				if (!$allowed) {
+					$assignedDriver = $driverModel->find((int)$assignment['driver_id']);
+					if ($assignedDriver) {
+						$profile = $this->profileModel->where('user_id', $driverUserId)->first();
+						$pn = strtolower(trim($profile['nama'] ?? ''));
+						$dn = strtolower(trim($assignedDriver['nama'] ?? ''));
+						if ($pn !== '' && $pn === $dn) {
+							$allowed = true;
+						}
+					}
+				}
+			} catch (\Throwable $e) {}
 		}
+		if (!$allowed) return redirect()->to('/unauthorized');
 
 		$booking = $this->carModel->find($id);
 		if (!$booking) {
@@ -148,9 +172,31 @@ class DriverDashboardController extends BaseController
 			return redirect()->to('/login');
 		}
 		$assignment = $this->assignmentModel->where('car_booking_id', $id)->first();
-		if (!$assignment || (int)$assignment['driver_id'] !== (int)$driverUserId) {
+		if (!$assignment) {
 			return redirect()->to('/unauthorized');
 		}
+		$allowed = ((int)$assignment['driver_id'] === (int)$driverUserId);
+		if (!$allowed) {
+			try {
+				$driverModel = model('App\\Models\\DriverModel');
+				$currentDriver = $driverModel->where('user_id', $driverUserId)->first();
+				if ($currentDriver && (int)$assignment['driver_id'] === (int)$currentDriver['id']) {
+					$allowed = true;
+				}
+				if (!$allowed) {
+					$assignedDriver = $driverModel->find((int)$assignment['driver_id']);
+					if ($assignedDriver) {
+						$profile = $this->profileModel->where('user_id', $driverUserId)->first();
+						$pn = strtolower(trim($profile['nama'] ?? ''));
+						$dn = strtolower(trim($assignedDriver['nama'] ?? ''));
+						if ($pn !== '' && $pn === $dn) {
+							$allowed = true;
+						}
+					}
+				}
+			} catch (\Throwable $e) {}
+		}
+		if (!$allowed) return redirect()->to('/unauthorized');
 
 		$newStatus = strtolower(trim($this->request->getPost('status')));
 		$allowed   = ['accepted','ongoing','done','rejected'];
@@ -161,6 +207,44 @@ class DriverDashboardController extends BaseController
 		// Update status di booking mobil.
 		$this->carModel->update($id, ['status' => $newStatus]);
 
+		// Sinkronkan status driver (On Duty saat ongoing, Available saat done/rejected bila tidak ada tugas ongoing lain)
+		try {
+			$driverModel = model('App\\Models\\DriverModel');
+			$driverId = null;
+			// assignment.driver_id bisa jadi drivers.id (baru) atau users.id (legacy)
+			// Coba treat sebagai drivers.id terlebih dahulu
+			$maybeDriver = $driverModel->find((int)$assignment['driver_id']);
+			if ($maybeDriver) {
+				$driverId = (int)$maybeDriver['id'];
+			} else {
+				// fallback: cari by user_id dari sesi
+				$currentDriver = $driverModel->where('user_id', $driverUserId)->first();
+				if ($currentDriver) {
+					$driverId = (int)$currentDriver['id'];
+				}
+			}
+
+			if ($driverId) {
+				if ($newStatus === 'ongoing') {
+					$driverModel->update($driverId, ['status' => 'On Duty']);
+				} elseif (in_array($newStatus, ['done','rejected'], true)) {
+					// Hanya set Available jika tidak ada booking lain yang masih ongoing untuk driver ini
+					$hasOtherOngoing = (int)$this->assignmentModel
+						->select('driver_assignments.id')
+						->join('car_bookings', 'car_bookings.id = driver_assignments.car_booking_id')
+						->where('driver_assignments.driver_id', $assignment['driver_id'])
+						->where('car_bookings.status', 'ongoing')
+						->where('car_bookings.id !=', $id)
+						->countAllResults() > 0;
+					if (!$hasOtherOngoing) {
+						$driverModel->update($driverId, ['status' => 'Available']);
+					}
+				}
+			}
+		} catch (\Throwable $e) {
+			// abaikan jika gagal update status driver
+		}
+
 		return redirect()->to('driver/jobs/' . $id)->with('message', 'Status diperbarui.');
 	}
 
@@ -169,14 +253,31 @@ class DriverDashboardController extends BaseController
 	 */
 	protected function getDriverJobs(int $driverUserId): array
 	{
-		// Join driver_assignments -> car_bookings -> user_profile/users
+		// Determine possible driver IDs mapped to this user
+		$ids = [(int)$driverUserId]; // legacy mapping
+		$currentName = null;
+		try {
+			$driverModel = model('App\\Models\\DriverModel');
+			$currentDriver = $driverModel->where('user_id', $driverUserId)->first();
+			if ($currentDriver) {
+				$ids[] = (int)$currentDriver['id'];
+			}
+			$profile = $this->profileModel->where('user_id', $driverUserId)->first();
+			$currentName = $profile['nama'] ?? null;
+		} catch (\Throwable $e) {}
+
 		$builder = $this->assignmentModel
-			->select('driver_assignments.id as assignment_id, car_bookings.id as booking_id, car_bookings.tanggal_pergi, car_bookings.tujuan, car_bookings.status, users.email, user_profile.nama')
+			->select('driver_assignments.id as assignment_id, car_bookings.id as booking_id, car_bookings.tanggal_pergi, car_bookings.tanggal_pulang, car_bookings.tujuan, car_bookings.status, users.email, user_profile.nama')
 			->join('car_bookings', 'car_bookings.id = driver_assignments.car_booking_id')
 			->join('users', 'users.id = car_bookings.user_id', 'left')
 			->join('user_profile', 'user_profile.user_id = users.id', 'left')
-			->where('driver_assignments.driver_id', $driverUserId)
+			->join('drivers d', 'd.id = driver_assignments.driver_id', 'left')
+			->groupStart()
+				->whereIn('driver_assignments.driver_id', array_unique(array_filter($ids)))
+				->orWhere('d.user_id', $driverUserId)
+			->groupEnd()
 			->orderBy('car_bookings.tanggal_pergi', 'ASC');
+
 		$rows = $builder->findAll();
 		return $rows ?: [];
 	}
@@ -202,7 +303,11 @@ class DriverDashboardController extends BaseController
 			return (int)$this->assignmentModel
 				->select('driver_assignments.id')
 				->join('car_bookings', 'car_bookings.id = driver_assignments.car_booking_id')
-				->where('driver_assignments.driver_id', $driverUserId)
+				->join('drivers d', 'd.id = driver_assignments.driver_id', 'left')
+				->groupStart()
+					->where('driver_assignments.driver_id', $driverUserId)
+					->orWhere('d.user_id', $driverUserId)
+				->groupEnd()
 				->whereIn('car_bookings.status', ['accepted','ongoing'])
 				->countAllResults();
 		} catch (\Throwable $e) {
@@ -221,7 +326,11 @@ class DriverDashboardController extends BaseController
 			$runningCars = (int)$this->assignmentModel
 				->select('driver_assignments.id')
 				->join('car_bookings', 'car_bookings.id = driver_assignments.car_booking_id')
-				->where('driver_assignments.driver_id', $driverUserId)
+				->join('drivers d', 'd.id = driver_assignments.driver_id', 'left')
+				->groupStart()
+					->where('driver_assignments.driver_id', $driverUserId)
+					->orWhere('d.user_id', $driverUserId)
+				->groupEnd()
 				->where('car_bookings.status', 'ongoing')
 				->countAllResults();
 		} catch (\Throwable $e) {}

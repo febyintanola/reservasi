@@ -10,7 +10,7 @@ class UserProfileModel extends Model
 
     // FIX: hanya kolom-kolom dari tabel user_profile
     protected $allowedFields = [
-        'user_id', 'nama', 'divisi', 'no_tlp', 'foto_url', 'created_at', 'updated_at'
+        'user_id', 'nama', 'divisi', 'no_tlp', 'foto_url', 'role', 'created_at', 'updated_at'
     ];
 
     protected $useTimestamps = true;

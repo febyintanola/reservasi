@@ -163,6 +163,35 @@ public function storeRegister()
             'divisi'     => $user['profile_divisi'] ?? $user['divisi'],
         ]);
         
+        // For driver role, ensure linkage to drivers table
+        if ($role === 'driver') {
+            try {
+                $driverModel = model('App\\Models\\DriverModel');
+                // Already linked?
+                $linked = $driverModel->where('user_id', $user['id'])->first();
+                if (!$linked) {
+                    // Try match by name
+                    $match = null;
+                    $name = $user['profile_nama'] ?? $user['nama'] ?? null;
+                    if ($name) {
+                        $match = $driverModel->where('nama', $name)->first();
+                    }
+                    if ($match) {
+                        $driverModel->update($match['id'], ['user_id' => $user['id']]);
+                    } else {
+                        // Create a new driver row minimally
+                        $driverModel->insert([
+                            'nama'    => $name ?: ('Driver_' . $user['id']),
+                            'user_id' => $user['id'],
+                            'status'  => 'Available',
+                        ]);
+                    }
+                }
+            } catch (\Throwable $e) {
+                // ignore linkage error
+            }
+        }
+
         if ($role === 'admin') {
             return redirect()->to('/admin');
         } elseif ($role === 'driver') {
