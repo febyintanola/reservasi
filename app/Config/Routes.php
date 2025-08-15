@@ -63,9 +63,9 @@ $routes->group('admin', ['filter' => 'auth'], function($routes) {
         $routes->get('car/assign/(:num)', 'CarController::assignForm/$1');
         $routes->post('car/assign_save/(:num)', 'CarController::assignSave/$1');
         $routes->get('mobil', 'Admin\MobilController::index');
-    // Admin Car bookings list & CRUD
-    $routes->get('car', 'CarController::adminIndex');
-    $routes->get('car/detail/(:num)', 'CarController::detail/$1');
+        // Admin Car bookings list & CRUD
+        $routes->get('car', 'CarController::adminIndex');
+        $routes->get('car/detail/(:num)', 'CarController::detail/$1');
         // Driver management
         $routes->get('driver', 'CarController::driverList');
         $routes->get('driver/tambah', 'CarController::driverCreate');
@@ -84,9 +84,9 @@ $routes->group('admin', ['filter' => 'auth'], function($routes) {
         $routes->get('car/edit/(:num)','CarController::edit/$1');
         $routes->post('car/update/(:num)','CarController::update/$1');
 
-    // Profile (admin)
-    $routes->get('profile', 'UserController::profile');
-    $routes->post('profile/update', 'UserController::update');
+        // Profile (admin)
+        $routes->get('profile', 'UserController::profile');
+        $routes->post('profile/update', 'UserController::update');
     });
 
 });
@@ -114,5 +114,7 @@ $routes->group('driver', ['filter' => 'auth'], function($routes) {
         $routes->get('dashboard', 'DriverDashboardController::index');
         $routes->get('jobs/(:num)', 'DriverDashboardController::show/$1');
         $routes->post('jobs/(:num)/status', 'DriverDashboardController::updateStatus/$1');
+        $routes->get('profile', 'UserController::profile');
+        $routes->post('profile/update', 'UserController::update');
     });
 });

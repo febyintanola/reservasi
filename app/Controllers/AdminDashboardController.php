@@ -158,6 +158,38 @@ class AdminDashboardController extends BaseController {
                 ->with('error', 'Booking mobil tidak ditemukan');
         }
         $carModel->update($id, ['status' => 'accepted']);
+
+        // Sync status driver -> On Duty ketika booking diterima (jika ada assignment)
+        try {
+            $assignmentModel = new DriverAssignmentModel();
+            $assignment = $assignmentModel->where('car_booking_id', $id)->first();
+            if ($assignment) {
+                $driverModel = new DriverModel();
+                $driverId = null;
+                $legacyUserId = null;
+
+                // Coba treat driver_id sebagai drivers.id (baru)
+                $maybeDriver = $driverModel->find((int)$assignment['driver_id']);
+                if ($maybeDriver) {
+                    $driverId = (int)$maybeDriver['id'];
+                    $legacyUserId = $maybeDriver['user_id'] ?? null; // jika sudah terhubung
+                } else {
+                    // Legacy: driver_assignments.driver_id menyimpan users.id
+                    $legacyUserId = (int)$assignment['driver_id'];
+                    $byUser = $driverModel->where('user_id', $legacyUserId)->first();
+                    if ($byUser) {
+                        $driverId = (int)$byUser['id'];
+                    }
+                }
+
+                if ($driverId) {
+                    // Set On Duty saat accepted
+                    $driverModel->update($driverId, ['status' => 'On Duty']);
+                }
+            }
+        } catch (\Throwable $e) {
+            // abaikan jika gagal sync
+        }
         return redirect()->to(base_url('admin/car/detailMobil/' . $id))
             ->with('message', 'Booking mobil disetujui');
     }
@@ -172,6 +204,50 @@ class AdminDashboardController extends BaseController {
                 ->with('error', 'Booking mobil tidak ditemukan');
         }
         $carModel->update($id, ['status' => 'rejected']);
+
+        // Sync status driver -> Available jika tidak ada tugas ongoing lain
+        try {
+            $assignmentModel = new DriverAssignmentModel();
+            $assignment = $assignmentModel->where('car_booking_id', $id)->first();
+            if ($assignment) {
+                $driverModel = new DriverModel();
+                $driverId = null;
+                $legacyUserId = null;
+
+                // Coba treat driver_id sebagai drivers.id (baru)
+                $maybeDriver = $driverModel->find((int)$assignment['driver_id']);
+                if ($maybeDriver) {
+                    $driverId = (int)$maybeDriver['id'];
+                    $legacyUserId = $maybeDriver['user_id'] ?? null;
+                } else {
+                    // Legacy: driver_assignments.driver_id menyimpan users.id
+                    $legacyUserId = (int)$assignment['driver_id'];
+                    $byUser = $driverModel->where('user_id', $legacyUserId)->first();
+                    if ($byUser) {
+                        $driverId = (int)$byUser['id'];
+                    }
+                }
+
+                if ($driverId) {
+                    // Cek apakah masih ada booking lain yang ongoing untuk driver ini
+                    $hasOtherOngoing = (int)$assignmentModel
+                        ->select('driver_assignments.id')
+                        ->join('car_bookings', 'car_bookings.id = driver_assignments.car_booking_id')
+                        ->groupStart()
+                            ->where('driver_assignments.driver_id', $driverId)
+                            ->orWhere('driver_assignments.driver_id', $legacyUserId)
+                        ->groupEnd()
+                        ->where('car_bookings.status', 'ongoing')
+                        ->where('car_bookings.id !=', $id)
+                        ->countAllResults() > 0;
+                    if (!$hasOtherOngoing) {
+                        $driverModel->update($driverId, ['status' => 'Available']);
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // abaikan jika gagal sync
+        }
         return redirect()->to(base_url('admin/car/detailMobil/' . $id))
             ->with('message', 'Booking mobil ditolak');
     }

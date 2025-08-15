@@ -225,14 +225,18 @@ class DriverDashboardController extends BaseController
 			}
 
 			if ($driverId) {
-				if ($newStatus === 'ongoing') {
+				if (in_array($newStatus, ['ongoing','accepted'], true)) {
 					$driverModel->update($driverId, ['status' => 'On Duty']);
 				} elseif (in_array($newStatus, ['done','rejected'], true)) {
 					// Hanya set Available jika tidak ada booking lain yang masih ongoing untuk driver ini
 					$hasOtherOngoing = (int)$this->assignmentModel
 						->select('driver_assignments.id')
 						->join('car_bookings', 'car_bookings.id = driver_assignments.car_booking_id')
-						->where('driver_assignments.driver_id', $assignment['driver_id'])
+						->join('drivers d2', 'd2.id = driver_assignments.driver_id', 'left')
+						->groupStart()
+							->where('driver_assignments.driver_id', $assignment['driver_id'])
+							->orWhere('d2.user_id', $driverUserId)
+						->groupEnd()
 						->where('car_bookings.status', 'ongoing')
 						->where('car_bookings.id !=', $id)
 						->countAllResults() > 0;

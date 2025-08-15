@@ -35,35 +35,37 @@ $isProfile = ($uri === 'admin/profile');
       <i class="fas fa-bars" :class="open ? 'text-xl text-black' : 'text-lg text-black'"></i>
     </button>
 
-    <div class="px-4 pt-14"> <!-- pt-14 agar tidak ketumpuk tombol -->
+    <div class="px-3 pt-12"> <!-- pt-14 agar tidak ketumpuk tombol -->
       <h1 class="text-2xl font-bold text-[#1e90ff] mb-6" x-show="open">RuMa</h1>
       <nav class="space-y-1">
 
         <!-- Home -->
         <a href="<?= base_url('/admin') ?>" class="nav-link" data-active="<?= $isHome ? 'true' : 'false' ?>">
-          <i class="fas fa-home text-[20px]"></i>
+          <i class="fas fa-home text-[16px]"></i>
           <span x-show="open">Home</span>
         </a>
 
         <!-- Menu collapsible -->
-  <div class="flex items-center justify-between px-2 py-2 rounded-lg">
-          <div class="flex items-center space-x-3 text-gray-600">
-            <i class="fas fa-layer-group text-[20px]"></i>
-            <span x-show="open" class="truncate">Menu</span>
-          </div>
-          <button @click="submenuOpen = !submenuOpen" x-show="open">
-            <i :class="submenuOpen ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="text-sm text-[#1e90ff]"></i>
-          </button>
-        </div>
+        <button
+        type="button"
+        @click="submenuOpen = !submenuOpen"
+        x-show="open"
+        class="nav-link w-full justify-between">
+        <span class="flex items-center gap-2 text-gray-600">
+          <i class="fas fa-layer-group text-[16px]"></i>
+          <span class="truncate text-sm">Menu</span>
+        </span>
+        <i :class="submenuOpen ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="text-xs text-[#1e90ff]"></i>
+        </button>
 
         <!-- Submenu -->
-        <div x-show="submenuOpen && open" class="pl-6 space-y-1 transition-all duration-200">
+        <div x-show="submenuOpen && open" class="pl-5 space-y-0.5 transition-all duration-200">
           <a href="<?= base_url('admin/ruang') ?>" class="nav-link" data-active="<?= $isRuang ? 'true' : 'false' ?>">
-            <i class="fas fa-door-open text-[18px]"></i>
+            <i class="fas fa-door-open text-[14px]"></i>
             <span x-show="open">List Ruang</span>
           </a>
           <a href="<?= base_url('admin/driver') ?>" class="nav-link" data-active="<?= $isCar ? 'true' : 'false' ?>">
-            <i class="fas fa-car-side text-[18px]"></i>
+            <i class="fas fa-car-side text-[14px]"></i>
             <span x-show="open">List Driver</span>
           </a>
         </div>
@@ -78,25 +80,25 @@ $isProfile = ($uri === 'admin/profile');
 
         <!-- Profile -->
   <a href="<?= base_url('/admin/profile') ?>" class="nav-link" data-active="<?= $isProfile ? 'true' : 'false' ?>">
-          <i class="far fa-user-circle text-[20px]"></i>
+          <i class="far fa-user-circle text-[16px]"></i>
           <span x-show="open">Profile</span>
         </a>
 
         <!-- Logout -->
   <a href="<?= base_url('/logout') ?>" class="nav-link hover:text-red-600">
-          <i class="fas fa-sign-out-alt text-[20px] text-[#1e90ff]"></i>
+          <i class="fas fa-sign-out-alt text-[16px] text-[#1e90ff]"></i>
           <span x-show="open">Log out</span>
         </a>
       </nav>
     </div>
 
     <!-- User info -->
-    <div class="flex items-center space-x-3 px-4 pb-6">
+    <div class="flex items-center space-x-2.5 px-3 pb-5">
       <img src="<?= esc($fotoUrl) ?>"
            alt="Foto profil"
-           class="w-10 h-10 rounded-full object-cover border border-gray-200" />
+           class="w-8 h-8 rounded-full object-cover border border-gray-200" />
       <div class="hidden md:block" x-show="open">
-        <p class="text-gray-900 font-semibold text-base"><?= session('nama') ?? 'User' ?></p>
+        <p class="text-gray-900 font-semibold text-sm"><?= session('nama') ?? 'User' ?></p>
         <p class="text-gray-600 text-sm"><?= session('email') ?? 'user@example.com' ?></p>
       </div>
     </div>

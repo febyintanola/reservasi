@@ -149,6 +149,23 @@ class CarController extends BaseController
             } else {
                 $assignmentModel->insert($dataAssign);
             }
+
+            // Jika booking sudah accepted/ongoing, set driver menjadi On Duty
+            try {
+                if (in_array(strtolower($booking['status'] ?? ''), ['accepted','ongoing'], true)) {
+                    $driverModel = new DriverModel();
+                    $driverRecord = $driverModel->find($driver_id);
+                    if ($driverRecord) {
+                        $driverModel->update((int)$driverRecord['id'], ['status' => 'On Duty']);
+                    } else {
+                        // Legacy: driver_id mungkin adalah users.id
+                        $byUser = $driverModel->where('user_id', $driver_id)->first();
+                        if ($byUser) {
+                            $driverModel->update((int)$byUser['id'], ['status' => 'On Duty']);
+                        }
+                    }
+                }
+            } catch (\Throwable $e) { /* abaikan */ }
             return redirect()->to('admin/car/detailMobil/' . $id)->with('message', 'Driver & Mobil berhasil di-assign.');
         }
 
@@ -357,7 +374,52 @@ class CarController extends BaseController
             'expenditure_org' => $this->request->getPost('expenditure_org'),
             'status' => $this->request->getPost('status'),
         ];
+        $prevStatus = strtolower($booking['status'] ?? '');
         $model->update($id, $data);
+
+        // Sinkronkan status driver jika status booking berubah oleh admin
+        try {
+            $newStatus = strtolower($data['status'] ?? '');
+            if ($newStatus && $newStatus !== $prevStatus) {
+                $assignmentModel = new DriverAssignmentModel();
+                $assignment = $assignmentModel->where('car_booking_id', $id)->first();
+                if ($assignment) {
+                    $driverModel = new DriverModel();
+                    $driverId = null;
+
+                    // Coba drivers.id terlebih dahulu
+                    $maybeDriver = $driverModel->find((int)$assignment['driver_id']);
+                    if ($maybeDriver) {
+                        $driverId = (int)$maybeDriver['id'];
+                    } else {
+                        // Legacy: driver_assignments.driver_id adalah users.id
+                        $byUser = $driverModel->where('user_id', (int)$assignment['driver_id'])->first();
+                        if ($byUser) $driverId = (int)$byUser['id'];
+                    }
+
+                    if ($driverId) {
+                        if (in_array($newStatus, ['accepted','ongoing'], true)) {
+                            $driverModel->update($driverId, ['status' => 'On Duty']);
+                        } elseif (in_array($newStatus, ['done','rejected','pending'], true)) {
+                            // Set Available hanya jika tidak ada booking lain yg ongoing untuk driver ini
+                            $hasOtherOngoing = (int)$assignmentModel
+                                ->select('driver_assignments.id')
+                                ->join('car_bookings', 'car_bookings.id = driver_assignments.car_booking_id')
+                                ->groupStart()
+                                    ->where('driver_assignments.driver_id', $driverId)
+                                    ->orWhere('driver_assignments.driver_id', (int)$assignment['driver_id'])
+                                ->groupEnd()
+                                ->where('car_bookings.status', 'ongoing')
+                                ->where('car_bookings.id !=', $id)
+                                ->countAllResults() > 0;
+                            if (!$hasOtherOngoing) {
+                                $driverModel->update($driverId, ['status' => 'Available']);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (\Throwable $e) { /* abaikan */ }
         return redirect()->to('admin/car')->with('success', 'Booking mobil berhasil diperbarui');
     }
 

@@ -59,7 +59,7 @@
         <option disabled <?= empty($profile['divisi']) ? 'selected' : '' ?>>Pilih Divisi</option>
         <?php 
         $divisiList =['GM','Umum','Keuangan','Akuntansi','Anggaran','SIS','Humas','SDM','Enginering',
-        'K3','DHR3','Ahli','RPH 1','DHR 1','RPH 2','DHR 2','DHR 2','Area Service','RPH 3'];
+        'K3','DHR3','Ahli','RPH 1','DHR 1','RPH 2','DHR 2','DHR 2','Area Service','RPH 3','Driver'];
         foreach ($divisiList as $divisi): ?>
           <option value="<?= esc($divisi) ?>" <?= (isset($profile['divisi']) && $profile['divisi'] === $divisi) ? 'selected' : '' ?>>
             <?= esc($divisi) ?>

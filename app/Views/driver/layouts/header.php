@@ -28,31 +28,28 @@
 ?>
 <!-- Main Content Area -->
  <div class="flex-1 flex flex-col">
-    <header class="flex item-center justify-between px-4 py-3 border-b border-white bg-white">
+    <header class="flex items-center justify-between px-4 py-3 border-b border-white bg-white">
         <div class="flex-1 flex justify-center">
             <div class="text-black text-base font-normal">RuMa</div>
         </div>
-        <a href="<?= base_url('/driver/profile')?>" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center ml-auto overflow-hidden">
-            <img src="<?=esc($hdrFotoUrl) ?>" alt="Profil" class="w=8 h-8 object-cover"/>
-    </a>
+        <div class="flex items-center ml-auto gap-3">
+            <a href="<?= base_url('/logout') ?>" class="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                <i class="fas fa-sign-out-alt mr-2"></i>
+                Logout
+            </a>
+            <a href="<?= site_url('driver/profile') ?>" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
+                <img src="<?=esc($hdrFotoUrl) ?>" alt="Profil" class="w-8 h-8 object-cover"/>
+            </a>
+        </div>
     </header>
     <main class="flex-1 p-6 overflow-y-auto">
         <?= $this->renderSection('content') ?>
     </main>
     </div>
 </body>
-<script>
-    //toggle sidebar
-    const toggleBtn = document.getElementById('sidebarToggle');
-    const sidebar = document.getElementById('sidebar');
-
-    toggleBtn.addEventListener('click', () =>{
-        sidebar.classList.toggle('-ml-64');
-    });
-    </script>
 </html>
 
 
-    
+
 
 
