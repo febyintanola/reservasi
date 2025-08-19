@@ -74,7 +74,6 @@ class CarController extends BaseController
 
         $data = [
             'nama'      => $this->request->getPost('nama'),
-            'sim'       => $this->request->getPost('sim'),
             'no_hp'     => $this->request->getPost('no_hp'),
             'status'    => $this->request->getPost('status'),
         ];
@@ -246,7 +245,6 @@ class CarController extends BaseController
 
         $driverModel->insert([
             'nama' => $this->request->getPost('nama'),
-            'sim' => $this->request->getPost('sim'),
             'no_hp' => $this->request->getPost('no_hp'),
             'foto_url' => $fotoPath,
             'status' => $status,
@@ -269,7 +267,6 @@ class CarController extends BaseController
         if (!$driver) return redirect()->to('admin/driver')->with('error','Driver tidak ditemukan');
         $dataUpdate = [
             'nama' => $this->request->getPost('nama'),
-            'sim' => $this->request->getPost('sim'),
             'no_hp' => $this->request->getPost('no_hp'),
             'status' => $this->request->getPost('status') ?: ($driver['status'] ?? 'Available'),
         ];
@@ -289,12 +286,13 @@ class CarController extends BaseController
             }
             $newName = $foto->getRandomName();
             if (!$foto->hasMoved() && $foto->move($uploadsDir, $newName)) {
-                $data['foto_url'] = base_url('uploads/' . $newName);
+                // Simpan path relatif agar konsisten dengan driverStore()
+                $dataUpdate['foto_url'] = 'uploads/' . $newName;
             } else {
                 return redirect()->back()->withInput()->with('error', 'Gagal menyimpan gambar.');
             }
         }
-        $driverModel->update($id,$dataUpdate);
+        $driverModel->update($id, $dataUpdate);
         return redirect()->to('admin/driver')->with('success','Driver diperbarui.');
     }
 
