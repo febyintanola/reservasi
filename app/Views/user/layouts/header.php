@@ -46,6 +46,43 @@ if ($uid) {
       <?= $this->renderSection('content') ?>
     </main>
   </div>
+
+  <?php $notif = session()->getFlashdata('notif'); ?>
+
+  <div id="toast-notif"
+       class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 transition-opacity duration-300 <?= $notif ? '' : 'opacity-0 pointer-events-none' ?>">
+    <div class="w-full max-w-lg sm:max-w-xl border border-gray-300 rounded-lg bg-white shadow-lg p-6 relative">
+      <div class="flex items-start justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-black text-lg">ℹ️</span>
+          <span class="font-semibold text-black text-base leading-tight">
+            <?= esc($notif['title'] ?? 'Berhasil') ?>
+          </span>
+        </div>
+        <button type="button" id="toast-close" class="text-black text-lg leading-none hover:opacity-70">
+          ✖
+        </button>
+      </div>
+      <p class="text-black text-sm sm:text-base leading-relaxed">
+        <?= esc($notif['message'] ?? 'Aksi berhasil diproses.') ?>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const toast = document.getElementById('toast-notif');
+      const closeBtn = document.getElementById('toast-close');
+      const shouldShow = <?= $notif ? 'true' : 'false' ?>;
+
+      if (shouldShow) {
+        // Auto-hide setelah 4 detik
+        const hide = () => toast.classList.add('opacity-0', 'pointer-events-none');
+        setTimeout(hide, 4000);
+        closeBtn?.addEventListener('click', hide);
+      }
+    })();
+  </script>
 </body>
  <script>
     // Toggle Sidebar

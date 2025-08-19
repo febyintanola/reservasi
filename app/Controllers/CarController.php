@@ -59,7 +59,13 @@ class CarController extends BaseController
 
         $model->insert($data);
 
-        return view('user/car/konfirmasi', ['data' => $data]);
+        return redirect()
+            ->to('/') // atau halaman tujuan Anda
+            ->with('notif', [
+                'type' => 'success',
+                'title' => 'Pemesanan Mobil Berhasil',
+                'message' => 'Silakan tunggu konfirmasi dari admin.'
+            ]);
     }
     //Admin 
     public function tambahdriver()

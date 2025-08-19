@@ -64,7 +64,10 @@
         <tr>
           <th class="px-4 py-2">Status</th>
           <td class="px-4 py-2">
-            <span class="px-2 py-1 text-xs rounded-full <?= $status === 'accepted' ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800' ?>">
+            <?php $s = strtolower(trim($status ?? '')); ?>
+            <span class="px-2 py-1 text-xs rounded-full <?= $s === 'accepted'
+              ? 'bg-green-200 text-green-800'
+              : (($s === 'rejected' || $s === 'ditolak') ? 'bg-red-200 text-red-800' : 'bg-yellow-200 text-yellow-800') ?>">
               <?= esc($status) ?>
             </span>
           </td>

@@ -122,7 +122,13 @@ class RoomController extends BaseController
 
         $bookingModel->save($data);
 
-        return view('user/ruang/konfirmasi', ['data' => $data]);
+        return redirect()
+            ->to('/')
+            ->with('notif', [
+                'type' => 'success',
+                'title' => 'Reservasi Berhasil',
+                'message' => 'Silakan tunggu konfirmasi dari admin.'
+            ]);
     }
 
     // Add the store method to handle room creation
