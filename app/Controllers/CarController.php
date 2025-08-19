@@ -428,28 +428,54 @@ class CarController extends BaseController
         $model = new CarModel();
         $booking = $model->find($id);
         if (!$booking) {
-            return redirect()->to('admin/car')->with('error', 'Data booking tidak ditemukan');
+            return redirect()->to('/admin')->with('error', 'Booking tidak ditemukan.');
         }
+
         // Ambil data assignment & driver (jika ada)
+        $assignment = null;
+        $driver = null;
+
         try {
-            $assignmentModel = model('App\\Models\\DriverAssignmentModel');
+            $assignmentModel = new DriverAssignmentModel();
             $assignment = $assignmentModel->where('car_booking_id', $id)->first();
         } catch (\Throwable $e) {
             $assignment = null;
         }
-        $driver = null;
-        if ($assignment && !empty($assignment['driver_id'])) {
-            try {
-                $driverModel = model('App\\Models\\DriverModel');
-                $driver = $driverModel->find($assignment['driver_id']);
-            } catch (\Throwable $e) {
-                $driver = null;
+
+        // Pastikan array
+        if (is_object($assignment)) {
+            $assignment = (array) $assignment;
+        }
+
+        if ($assignment) {
+            // Normalisasi nama kolom agar konsisten dengan view
+            $assignment['mobil_jenis'] = $assignment['mobil_jenis'] ?? ($assignment['jenis_mobil'] ?? $assignment['jenis'] ?? null);
+            $assignment['mobil_plat']  = $assignment['mobil_plat']  ?? ($assignment['no_plat'] ?? $assignment['plat'] ?? null);
+
+            if (!empty($assignment['driver_id'])) {
+                try {
+                    $driverModel = new DriverModel();
+                    $driverRow = $driverModel->find((int)$assignment['driver_id']);
+                    if (!$driverRow) {
+                        // fallback kalau driver_id adalah user_id
+                        $driverRow = $driverModel->where('user_id', (int)$assignment['driver_id'])->first();
+                    }
+                    if ($driverRow) {
+                        $driver = [
+                            'nama'  => $driverRow['nama'] ?? null,
+                            'no_hp' => $driverRow['no_hp'] ?? null,
+                        ];
+                    }
+                } catch (\Throwable $e) {
+                    $driver = null;
+                }
             }
         }
+
         return view('admin/car/detail', [
-            'booking' => $booking,
+            'booking'    => $booking,
             'assignment' => $assignment,
-            'driver' => $driver,
+            'driver'     => $driver,
         ]);
     }
 
@@ -464,28 +490,51 @@ class CarController extends BaseController
             return redirect()->to('history?jenis=mobil')->with('error', 'Data booking tidak ditemukan');
         }
 
-        // Ambil data assignment & driver (jika ada)
         $assignment = null;
         $driver = null;
+
         try {
-            $assignmentModel = model('App\\Models\\DriverAssignmentModel');
+            $assignmentModel = new DriverAssignmentModel();
             $assignment = $assignmentModel->where('car_booking_id', $id)->first();
         } catch (\Throwable $e) {
             $assignment = null;
         }
-        if ($assignment && !empty($assignment['driver_id'])) {
-            try {
-                $driverModel = model('App\\Models\\DriverModel');
-                $driver = $driverModel->find($assignment['driver_id']);
-            } catch (\Throwable $e) {
-                $driver = null;
+
+        // Paksa array jika model return object
+        if (is_object($assignment)) {
+            $assignment = (array) $assignment;
+        }
+
+        if ($assignment) {
+            // Normalisasi field agar cocok dengan view
+            $assignment['mobil_jenis'] = $assignment['mobil_jenis'] ?? ($assignment['jenis_mobil'] ?? $assignment['jenis'] ?? null);
+            $assignment['mobil_plat']  = $assignment['mobil_plat']  ?? ($assignment['no_plat'] ?? $assignment['plat'] ?? null);
+
+            // Ambil driver
+            if (!empty($assignment['driver_id'])) {
+                try {
+                    $driverModel = new DriverModel();
+                    $driverRow = $driverModel->find((int)$assignment['driver_id']);
+                    if (!$driverRow) {
+                        // fallback kalau driver_id menyimpan user_id
+                        $driverRow = $driverModel->where('user_id', (int)$assignment['driver_id'])->first();
+                    }
+                    if ($driverRow) {
+                        $driver = [
+                            'nama'  => $driverRow['nama'] ?? null,
+                            'no_hp' => $driverRow['no_hp'] ?? null,
+                        ];
+                    }
+                } catch (\Throwable $e) {
+                    $driver = null;
+                }
             }
         }
 
         return view('user/car/detail', [
-            'booking'   => $booking,
-            'assigment' => $assigment,
-            'driver'    => $driver,
+            'booking'    => $booking,
+            'assignment' => $assignment,
+            'driver'     => $driver,
         ]);
     }
 

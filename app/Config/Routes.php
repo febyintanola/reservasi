@@ -37,7 +37,7 @@ $routes->group('', ['filter' => 'auth'], function($routes) {
         $routes->post('/profile/update', 'UserController::update');
         $routes->get('/history', 'HistoryController::index');
         $routes->get('/ruang/detail/(:num)', 'HistoryController::detailRuang/$1');
-        $routes->get('/car/detail/(:num)', 'HistoryController::detailMobil/$1');
+        $routes->get('user/car/detail/(:num)', 'CarController::userDetail/$1');
 
 
     });

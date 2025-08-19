@@ -34,9 +34,10 @@
         <tr>
           <th class="px-4 py-2">Status</th>
           <td class="px-4 py-2">
+            <?php $status = $booking['status'] ?? 'pending'; ?>
             <span class="px-2 py-1 text-xs rounded-full 
-              <?= $booking['status'] === 'accepted' ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800' ?>">
-              <?= esc($booking['status']) ?>
+              <?= $status === 'accepted' ? 'bg-green-200 text-green-800' : ($status === 'rejected' ? 'bg-red-200 text-red-800' : 'bg-yellow-200 text-yellow-800') ?>">
+              <?= esc($status) ?>
             </span>
           </td>
         </tr>
@@ -46,16 +47,16 @@
             <th class="px-4 py-2">Driver</th>
             <td class="px-4 py-2">
               <?= esc($driver['nama'] ?? '-') ?>
-              <?= isset($driver['no_hp']) && $driver['no_hp'] ? '(' . esc($driver['no_hp']) . ')' : '' ?>
+              <?= !empty($driver['no_hp']) ? '(' . esc($driver['no_hp']) . ')' : '' ?>
             </td>
           </tr>
           <tr>
             <th class="px-4 py-2">Jenis Mobil</th>
-            <td class="px-4 py-2"><?= esc($assignment['jenis_mobil'] ?? '-') ?></td>
+            <td class="px-4 py-2"><?= esc($assignment['mobil_jenis'] ?? '-') ?></td>
           </tr>
           <tr>
             <th class="px-4 py-2">No Plat</th>
-            <td class="px-4 py-2"><?= esc($assignment['no_plat'] ?? '-') ?></td>
+            <td class="px-4 py-2"><?= esc($assignment['mobil_plat'] ?? '-') ?></td>
           </tr>
         <?php endif; ?>
       </tbody>
