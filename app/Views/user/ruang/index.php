@@ -22,17 +22,17 @@
             <input type="time" name="jam_selesai" id="jam_selesai" class="w-full rounded-md border border-slate-300 px-3 py-2" required>
           </div>
         </div>
-        <div>
-          <label class="block text-sm mb-1 text-slate-700">Jumlah Peserta</label>
-          <input type="number" name="peserta" id="peserta" min="1" class="w-full rounded-md border border-slate-300 px-3 py-2" required>
-        </div>
       </div>
       <div class="flex justify-end mt-4">
         <button type="submit" class="btn-primary">
           <i class="fas fa-search"></i>
           Cari
         </button>
+        <button type="button" id="cariSlotBtn" class="btn-primary">
+          Slot Terdekat
+        </button>
       </div>
+      <div id="slotTerdekatInfo" class="text-sm text-blue-700 mt-2 text-center"></div>
     </form>
     
   <section id="roomList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -87,9 +87,55 @@
           });
         });
     }
+
+    // Tambahkan fungsi untuk cari slot terdekat
+    function cariSlotTerdekat() {
+      const tanggal = tanggalInput.value;
+      const jamMulai = jamMulaiInput.value;
+      const jamSelesai = jamSelesaiInput.value;
+      const infoEl = document.getElementById('slotTerdekatInfo');
+
+      infoEl.classList.remove('text-red-700');
+      infoEl.classList.add('text-blue-700');
+
+      if (!tanggal || !jamMulai || !jamSelesai) {
+        infoEl.classList.remove('text-blue-700');
+        infoEl.classList.add('text-red-700');
+        infoEl.textContent = 'Isi tanggal, jam mulai, dan jam selesai dulu.';
+        return;
+      }
+
+      infoEl.textContent = 'Mencari slot terdekat...';
+
+      // Pakai route yang ada
+      fetch(`/room/findNextAvailableSlotAnyRoom?tanggal=${encodeURIComponent(tanggal)}&jam_mulai=${encodeURIComponent(jamMulai)}&jam_selesai=${encodeURIComponent(jamSelesai)}`)
+        .then(r => r.json())
+        .then(res => {
+          // Cukup cek slots, jangan bergantung pada res.available
+          if (Array.isArray(res.slots) && res.slots.length) {
+            const list = res.slots.map(s => `• ${s.room_name}: ${s.start} - ${s.end}`).join('<br>');
+            slotTerdekatInfo.classList.remove('text-red-700');
+            slotTerdekatInfo.classList.add('text-blue-700');
+            slotTerdekatInfo.innerHTML = `<strong>Rekomendasi slot:</strong><br>${list}`;
+          } else {
+            slotTerdekatInfo.classList.remove('text-blue-700');
+            slotTerdekatInfo.classList.add('text-red-700');
+            slotTerdekatInfo.textContent = res.message || 'Tidak ditemukan slot alternatif.';
+          }
+        })
+        .catch(() => {
+          slotTerdekatInfo.classList.remove('text-blue-700');
+          slotTerdekatInfo.classList.add('text-red-700');
+          slotTerdekatInfo.textContent = 'Gagal mengambil data. Coba lagi.';
+        });
+    }
+
     /*tanggalInput.addEventListener('change', checkAvailability);
     jamMulaiInput.addEventListener('change', checkAvailability);
     jamSelesaiInput.addEventListener('change', checkAvailability);*/
+
+    // Ganti: tombol "Cari Terserdia" panggil cariSlotTerdekat, bukan checkAvailability
+    document.getElementById('cariSlotBtn').addEventListener('click', cariSlotTerdekat);
   </script>
 
 

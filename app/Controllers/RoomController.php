@@ -298,71 +298,86 @@ class RoomController extends BaseController
         $tanggal    = $this->request->getGet('tanggal');
         $jamMulai   = $this->request->getGet('jam_mulai');
         $jamSelesai = $this->request->getGet('jam_selesai');
-        $durasi     = strtotime($jamSelesai) - strtotime($jamMulai);
 
-        $roomModel = new RoomModel();
+        if (!$tanggal || !$jamMulai || !$jamSelesai) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'available' => false,
+                'message' => 'Parameter tanggal, jam_mulai, jam_selesai wajib diisi.'
+            ]);
+        }
+
+        $durasi = strtotime($jamSelesai) - strtotime($jamMulai);
+        if ($durasi <= 0) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'available' => false,
+                'message' => 'Jam selesai harus lebih besar dari jam mulai.'
+            ]);
+        }
+
+        $roomModel    = new RoomModel();
         $bookingModel = new BookingRuangModel();
 
-        $rooms = $roomModel->findAll();
+        $rooms   = $roomModel->findAll();
         $results = [];
 
         foreach ($rooms as $room) {
-            // 1. Cek apakah slot yang diminta bentrok (tidak tersedia)
-            $conflict = $bookingModel->where('room_id', $room['id'])
+            // Cek bentrok pada slot diminta
+            $builder = $bookingModel->builder();
+            $builder->where('room_id', $room['id'])
                 ->where('tanggal', $tanggal)
                 ->groupStart()
-                    ->where("jam_mulai <", $jamSelesai)
-                    ->where("jam_selesai >", $jamMulai)
+                    ->where('jam_mulai <', $jamSelesai)
+                    ->where('jam_selesai >', $jamMulai)
                 ->groupEnd()
-                ->whereIn('status', ['pending', 'approved'])
-                ->first();
+                ->whereIn('status', ['pending', 'approved']);
 
-            if ($conflict) {
-                // 2. Jika bentrok, cari slot lain yang tersedia di hari itu
-                $currentStart = strtotime('07:00'); // jam operasional awal
-                $endofDay = strtotime('17:00');
-                $found = false;
-                while ($currentStart + $durasi <= $endofDay) {
+            $hasConflict = $builder->countAllResults() > 0; // reset otomatis
+
+            if ($hasConflict) {
+                // Cari slot alternatif di hari yang sama
+                $currentStart = strtotime('07:00');
+                $endOfDay     = strtotime('17:00');
+
+                while ($currentStart + $durasi <= $endOfDay) {
                     $currentEnd = $currentStart + $durasi;
-                    $startStr = date('H:i', $currentStart);
-                    $endStr = date('H:i', $currentEnd);
+                    $startStr   = date('H:i', $currentStart);
+                    $endStr     = date('H:i', $currentEnd);
 
-                    $otherConflict = $bookingModel->where('room_id', $room['id'])
+                    $builder2 = $bookingModel->builder();
+                    $builder2->where('room_id', $room['id'])
                         ->where('tanggal', $tanggal)
                         ->groupStart()
-                            ->where("jam_mulai <", $endStr)
-                            ->where("jam_selesai >", $startStr)
+                            ->where('jam_mulai <', $endStr)
+                            ->where('jam_selesai >', $startStr)
                         ->groupEnd()
-                        ->whereIn('status', ['pending', 'approved'])
-                        ->first();
+                        ->whereIn('status', ['pending', 'approved']);
+
+                    $otherConflict = $builder2->countAllResults() > 0;
 
                     if (!$otherConflict) {
                         $results[] = [
-                            'room_id' => $room['id'],
+                            'room_id'   => $room['id'],
                             'room_name' => $room['nama_ruangan'],
-                            'start' => $startStr,
-                            'end' => $endStr
+                            'start'     => $startStr,
+                            'end'       => $endStr
                         ];
-                        $found = true;
                         break; // ambil slot pertama yang available
                     }
                     $currentStart += 30 * 60;
                 }
-                // Jika tidak ditemukan slot lain, ruangan tidak dimasukkan ke results
             }
-            // Jika slot yang diminta TIDAK bentrok, ruangan tidak dimasukkan ke results
         }
 
-        if (count($results) > 0) {
+        if ($results) {
             return $this->response->setJSON([
                 'available' => true,
-                'slots' => $results
-            ]);
-        } else {
-            return $this->response->setJSON([
-                'available' => false,
-                'message' => 'Tidak ada ruangan yang bentrok pada jam yang diminta, namun punya slot lain di hari itu.'
+                'slots'     => $results
             ]);
         }
+
+        return $this->response->setJSON([
+            'available' => false,
+            'message'   => 'Tidak ditemukan slot alternatif untuk ruangan yang bentrok.'
+        ]);
     }
 }
