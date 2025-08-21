@@ -18,6 +18,7 @@ class RoomController extends BaseController
         $tanggal = $this->request->getGet('tanggal');
         $jam_mulai = $this->request->getGet('jam_mulai');
         $jam_selesai = $this->request->getGet('jam_selesai');
+        $peserta = $this->request->getGet('peserta');
 
         $roomModel = new \App\Models\RoomModel();
         $rooms = $roomModel->findAll();
@@ -291,5 +292,77 @@ class RoomController extends BaseController
             $errMsg = 'Gagal memperbarui ruangan (alasan tidak diketahui).';
         }
         return redirect()->back()->withInput()->with('error', $errMsg);
+    }
+    public function findNextAvailableSlotAnyRoom()
+    {
+        $tanggal    = $this->request->getGet('tanggal');
+        $jamMulai   = $this->request->getGet('jam_mulai');
+        $jamSelesai = $this->request->getGet('jam_selesai');
+        $durasi     = strtotime($jamSelesai) - strtotime($jamMulai);
+
+        $roomModel = new RoomModel();
+        $bookingModel = new BookingRuangModel();
+
+        $rooms = $roomModel->findAll();
+        $results = [];
+
+        foreach ($rooms as $room) {
+            // 1. Cek apakah slot yang diminta bentrok (tidak tersedia)
+            $conflict = $bookingModel->where('room_id', $room['id'])
+                ->where('tanggal', $tanggal)
+                ->groupStart()
+                    ->where("jam_mulai <", $jamSelesai)
+                    ->where("jam_selesai >", $jamMulai)
+                ->groupEnd()
+                ->whereIn('status', ['pending', 'approved'])
+                ->first();
+
+            if ($conflict) {
+                // 2. Jika bentrok, cari slot lain yang tersedia di hari itu
+                $currentStart = strtotime('07:00'); // jam operasional awal
+                $endofDay = strtotime('17:00');
+                $found = false;
+                while ($currentStart + $durasi <= $endofDay) {
+                    $currentEnd = $currentStart + $durasi;
+                    $startStr = date('H:i', $currentStart);
+                    $endStr = date('H:i', $currentEnd);
+
+                    $otherConflict = $bookingModel->where('room_id', $room['id'])
+                        ->where('tanggal', $tanggal)
+                        ->groupStart()
+                            ->where("jam_mulai <", $endStr)
+                            ->where("jam_selesai >", $startStr)
+                        ->groupEnd()
+                        ->whereIn('status', ['pending', 'approved'])
+                        ->first();
+
+                    if (!$otherConflict) {
+                        $results[] = [
+                            'room_id' => $room['id'],
+                            'room_name' => $room['nama_ruangan'],
+                            'start' => $startStr,
+                            'end' => $endStr
+                        ];
+                        $found = true;
+                        break; // ambil slot pertama yang available
+                    }
+                    $currentStart += 30 * 60;
+                }
+                // Jika tidak ditemukan slot lain, ruangan tidak dimasukkan ke results
+            }
+            // Jika slot yang diminta TIDAK bentrok, ruangan tidak dimasukkan ke results
+        }
+
+        if (count($results) > 0) {
+            return $this->response->setJSON([
+                'available' => true,
+                'slots' => $results
+            ]);
+        } else {
+            return $this->response->setJSON([
+                'available' => false,
+                'message' => 'Tidak ada ruangan yang bentrok pada jam yang diminta, namun punya slot lain di hari itu.'
+            ]);
+        }
     }
 }

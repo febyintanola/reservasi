@@ -22,6 +22,10 @@
             <input type="time" name="jam_selesai" id="jam_selesai" class="w-full rounded-md border border-slate-300 px-3 py-2" required>
           </div>
         </div>
+        <div>
+          <label class="block text-sm mb-1 text-slate-700">Jumlah Peserta</label>
+          <input type="number" name="peserta" id="peserta" min="1" class="w-full rounded-md border border-slate-300 px-3 py-2" required>
+        </div>
       </div>
       <div class="flex justify-end mt-4">
         <button type="submit" class="btn-primary">
@@ -41,6 +45,7 @@
     const jamMulaiInput = document.getElementById('jam_mulai');
     const jamSelesaiInput = document.getElementById('jam_selesai');
     const roomList = document.getElementById('roomList');
+    const slotTerdekatInfo = document.getElementById('slotTerdekatInfo');
 
     function checkAvailability() {
       const tanggal = tanggalInput.value;

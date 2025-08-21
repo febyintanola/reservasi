@@ -21,6 +21,8 @@ $routes->group('', ['filter' => 'auth'], function($routes) {
         $routes->get('/ruang/booking-form', 'RoomController::bookingForm');
         $routes->post('/ruang/save-booking', 'RoomController::saveBooking');
         $routes->post('/ruang/simpan-booking', 'RoomController::saveBooking');
+        $routes->get('room/findNextAvailableSlot', 'RoomController::findNextAvailableSlot');
+        $routes->get('room/findNextAvailableSlotAnyRoom', 'RoomController::findNextAvailableSlotAnyRoom');
 
         // RUANG RAPAT (jika memang untuk user)
         $routes->get('/ruang-rapat', 'RuangRapatController::index');
