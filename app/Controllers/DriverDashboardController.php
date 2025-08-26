@@ -198,26 +198,57 @@ class DriverDashboardController extends BaseController
 		}
 		if (!$allowed) return redirect()->to('/unauthorized');
 
-		$newStatus = strtolower(trim($this->request->getPost('status')));
-		$allowed   = ['accepted','ongoing','done','rejected'];
-		if (!in_array($newStatus, $allowed, true)) {
+		// Normalisasi status agar "selesai/finish/approve" dll bisa diterima
+		$newStatusRaw = $this->request->getPost('status');
+		$newStatus    = $this->normalizeStatus($newStatusRaw);
+		if ($newStatus === null) {
 			return redirect()->back()->with('error', 'Status tidak valid');
 		}
 
-		// Update status di booking mobil.
+		// Update status booking mobil.
 		$this->carModel->update($id, ['status' => $newStatus]);
 
-		// Sinkronkan status driver (On Duty saat ongoing, Available saat done/rejected bila tidak ada tugas ongoing lain)
+		// Upload foto (opsional). Terima field name: photo atau foto
+		$uploadedMsg = '';
+		try {
+			$file = $this->request->getFile('photo') ?: $this->request->getFile('foto');
+			if ($file && $file->isValid() && !$file->hasMoved()) {
+				$ext = strtolower($file->getExtension() ?: pathinfo($file->getName(), PATHINFO_EXTENSION));
+				$allowedExt = ['jpg','jpeg','png','webp'];
+				if (in_array($ext, $allowedExt, true)) {
+					$targetDir = WRITEPATH . 'uploads' . DIRECTORY_SEPARATOR . 'driver_jobs' . DIRECTORY_SEPARATOR . $id;
+					if (!is_dir($targetDir)) {
+						@mkdir($targetDir, 0775, true);
+					}
+					$newName = uniqid('photo_', true) . '.' . $ext;
+					$file->move($targetDir, $newName);
+					$relativePath = 'uploads/driver_jobs/' . $id . '/' . $newName;
+
+					// Simpan path ke DB jika ada kolomnya (contoh: proof_photo).
+					// Pastikan kolom ini ditambahkan di tabel car_bookings dan di allowedFields CarModel.
+					try {
+						$this->carModel->update($id, ['proof_photo' => $relativePath]);
+					} catch (\Throwable $e) {
+						// Jika model memproteksi fields atau kolom belum ada, abaikan penyimpanan DB.
+						log_message('warning', 'Gagal simpan path foto ke DB: ' . $e->getMessage());
+					}
+					$uploadedMsg = ' Foto terunggah.';
+				} else {
+					$uploadedMsg = ' Format foto tidak didukung.';
+				}
+			}
+		} catch (\Throwable $e) {
+			log_message('error', 'Upload foto gagal: ' . $e->getMessage());
+		}
+
+		// Sinkron status driver seperti sebelumnya
 		try {
 			$driverModel = model('App\\Models\\DriverModel');
 			$driverId = null;
-			// assignment.driver_id bisa jadi drivers.id (baru) atau users.id (legacy)
-			// Coba treat sebagai drivers.id terlebih dahulu
 			$maybeDriver = $driverModel->find((int)$assignment['driver_id']);
 			if ($maybeDriver) {
 				$driverId = (int)$maybeDriver['id'];
 			} else {
-				// fallback: cari by user_id dari sesi
 				$currentDriver = $driverModel->where('user_id', $driverUserId)->first();
 				if ($currentDriver) {
 					$driverId = (int)$currentDriver['id'];
@@ -228,7 +259,6 @@ class DriverDashboardController extends BaseController
 				if (in_array($newStatus, ['ongoing','accepted'], true)) {
 					$driverModel->update($driverId, ['status' => 'On Duty']);
 				} elseif (in_array($newStatus, ['done','rejected'], true)) {
-					// Hanya set Available jika tidak ada booking lain yang masih ongoing untuk driver ini
 					$hasOtherOngoing = (int)$this->assignmentModel
 						->select('driver_assignments.id')
 						->join('car_bookings', 'car_bookings.id = driver_assignments.car_booking_id')
@@ -249,7 +279,33 @@ class DriverDashboardController extends BaseController
 			// abaikan jika gagal update status driver
 		}
 
-		return redirect()->to('driver/jobs/' . $id)->with('message', 'Status diperbarui.');
+		return redirect()->to('driver/jobs/' . $id)->with('message', 'Status diperbarui.' . $uploadedMsg);
+	}
+
+	// Tambahan: normalisasi berbagai label status dari UI ke nilai yang disimpan
+	private function normalizeStatus(?string $status): ?string
+	{
+		$map = [
+			'accept' => 'accepted',
+			'accepted' => 'accepted',
+			'approve' => 'accepted',
+			'approved' => 'accepted',
+			'mulai' => 'ongoing',
+			'start' => 'ongoing',
+			'jalan' => 'ongoing',
+			'running' => 'ongoing',
+			'ongoing' => 'ongoing',
+			'selesai' => 'done',
+			'finish' => 'done',
+			'done' => 'done',
+			'complete' => 'done',
+			'tolak' => 'rejected',
+			'batal' => 'rejected',
+			'reject' => 'rejected',
+			'rejected' => 'rejected',
+		];
+		$s = strtolower(trim((string)$status));
+		return $map[$s] ?? null;
 	}
 
 	/**

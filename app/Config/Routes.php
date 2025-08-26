@@ -116,7 +116,7 @@ $routes->group('driver', ['filter' => 'auth'], function($routes) {
         $routes->get('dashboard', 'DriverDashboardController::index');
         $routes->get('jobs/(:num)', 'DriverDashboardController::show/$1');
         $routes->post('jobs/(:num)/status', 'DriverDashboardController::updateStatus/$1');
-        $routes->get('profile', 'UserController::profile');
-        $routes->post('profile/update', 'UserController::update');
+        $routes->get('driver/profile', 'DriverProfileController::index');
+        $routes->post('driver/profile/photo', 'DriverProfileController::updatePhoto');
     });
 });
