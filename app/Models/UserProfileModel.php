@@ -3,6 +3,7 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
+/** Model untuk tabel user_profile (biodata pengguna). */
 class UserProfileModel extends Model
 {
     protected $table = 'user_profile'; // FIX: nama tabel yang benar
@@ -17,7 +18,7 @@ class UserProfileModel extends Model
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 
-    // Join profil berdasarkan email user
+    /** Join profil berdasarkan email user (contoh utilitas). */
     public function getUserWithProfileByEmail($email)
     {
         return $this->db->table('users')

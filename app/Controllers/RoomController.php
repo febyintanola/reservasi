@@ -5,6 +5,13 @@ namespace App\Controllers;
 use App\Models\RoomModel;
 use App\Models\BookingRuangModel;
 
+/**
+ * Controller Reservasi Ruang Rapat
+ *
+ * - Cek ketersediaan
+ * - Form booking
+ * - CRUD ruangan (admin)
+ */
 class RoomController extends BaseController
 {
     public function index() {
@@ -41,6 +48,7 @@ class RoomController extends BaseController
     return $this->response->setJSON($rooms);
 }
 
+    /** Cek ketersediaan rooms (POST) dan tampilkan view hasil. */
     public function checkAvailability()
     {
         $tanggal = $this->request->getPost('tanggal');
@@ -72,7 +80,8 @@ class RoomController extends BaseController
             'jam_selesai' => $jam_selesai,
         ]);
     }
-      public function bookingForm()
+            /** Tampilkan form booking ruang setelah memilih slot. */
+            public function bookingForm()
     {
         $roomId     = $this->request->getGet('room');
         $tanggal    = $this->request->getGet('tanggal');
@@ -102,6 +111,7 @@ class RoomController extends BaseController
         ]);
     }
 
+    /** Simpan permintaan booking ruang rapat. */
     public function saveBooking()
     {
         $bookingModel = new BookingRuangModel();
@@ -132,7 +142,7 @@ class RoomController extends BaseController
             ]);
     }
 
-    // Add the store method to handle room creation
+    // Admin: tambah ruang rapat
     public function store()
     {
         // Validate required fields first
@@ -293,6 +303,7 @@ class RoomController extends BaseController
         }
         return redirect()->back()->withInput()->with('error', $errMsg);
     }
+    /** Cari slot alternatif di ruangan manapun pada hari yang sama. */
     public function findNextAvailableSlotAnyRoom()
     {
         $tanggal    = $this->request->getGet('tanggal');

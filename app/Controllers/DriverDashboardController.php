@@ -8,6 +8,11 @@ use App\Models\BookingRuangModel;
 use App\Models\UserProfileModel;
 use CodeIgniter\HTTP\RedirectResponse;
 
+/**
+ * Dashboard untuk Driver
+ *
+ * Menampilkan ringkasan tugas, detail penugasan, dan memungkinkan update status.
+ */
 class DriverDashboardController extends BaseController
 {
 	protected CarModel $carModel;
@@ -23,9 +28,7 @@ class DriverDashboardController extends BaseController
 		$this->profileModel = new UserProfileModel();
 	}
 
-	/**
-	 * Dashboard utama driver.
-	 */
+	/** Dashboard utama driver. */
 	public function index()
 	{
 		$driverUserId = session('user_id');
@@ -92,9 +95,7 @@ class DriverDashboardController extends BaseController
 		]);
 	}
 
-	/**
-	 * Detail satu penugasan (booking mobil) berdasarkan driver assignment atau car booking id.
-	 */
+	/** Detail penugasan (booking mobil) oleh driver. */
 	public function show(int $id)
 	{
 		$driverUserId = session('user_id');
@@ -143,10 +144,11 @@ class DriverDashboardController extends BaseController
 		// Ambil data pemesan
 		$pemesan = null;
 		try {
+			$bookingUserId = is_array($booking) ? ($booking['user_id'] ?? null) : ($booking->user_id ?? null);
 			$pemesan = $this->profileModel
 				->select('user_profile.nama, users.email')
 				->join('users', 'users.id = user_profile.user_id', 'left')
-				->where('user_profile.user_id', $booking['user_id'])
+				->where('user_profile.user_id', $bookingUserId)
 				->first();
 		} catch (\Throwable $e) {
 			$pemesan = null;
@@ -159,9 +161,7 @@ class DriverDashboardController extends BaseController
 		]);
 	}
 
-	/**
-	 * Update status booking mobil (driver side). Status disimpan di tabel car_bookings.status.
-	 */
+	/** Update status booking mobil oleh driver. */
 	public function updateStatus(int $id)
 	{
 		if ($this->request->getMethod() !== 'post') {
@@ -247,11 +247,15 @@ class DriverDashboardController extends BaseController
 			$driverId = null;
 			$maybeDriver = $driverModel->find((int)$assignment['driver_id']);
 			if ($maybeDriver) {
-				$driverId = (int)$maybeDriver['id'];
+				$driverId = is_array($maybeDriver)
+					? (int)($maybeDriver['id'] ?? 0)
+					: (int)($maybeDriver->id ?? 0);
 			} else {
 				$currentDriver = $driverModel->where('user_id', $driverUserId)->first();
 				if ($currentDriver) {
-					$driverId = (int)$currentDriver['id'];
+					$driverId = is_array($currentDriver)
+						? (int)($currentDriver['id'] ?? 0)
+						: (int)($currentDriver->id ?? 0);
 				}
 			}
 
@@ -282,7 +286,7 @@ class DriverDashboardController extends BaseController
 		return redirect()->to('driver/jobs/' . $id)->with('message', 'Status diperbarui.' . $uploadedMsg);
 	}
 
-	// Tambahan: normalisasi berbagai label status dari UI ke nilai yang disimpan
+	// Normalisasi berbagai label status dari UI ke nilai yang disimpan
 	private function normalizeStatus(?string $status): ?string
 	{
 		$map = [
@@ -308,9 +312,7 @@ class DriverDashboardController extends BaseController
 		return $map[$s] ?? null;
 	}
 
-	/**
-	 * Ambil daftar pekerjaan (booking mobil) milik driver.
-	 */
+	/** Ambil daftar pekerjaan (booking mobil) milik driver. */
 	protected function getDriverJobs(int $driverUserId): array
 	{
 		// Determine possible driver IDs mapped to this user

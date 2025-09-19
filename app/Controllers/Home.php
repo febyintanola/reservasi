@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+/** Home landing untuk user setelah login (default). */
 class Home extends BaseController
 {
     public function index()

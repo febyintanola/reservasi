@@ -70,11 +70,11 @@ $isProfile = ($uri === 'admin/profile');
           </a>
         </div>
 
-        <!-- History 
-        <a href="<?= base_url('/admin/history') ?>" class="nav-link" data-active="<?= $isHistory ? 'true' : 'false' ?>">
+        <!-- Reports -->
+        <a href="<?= base_url('/admin/reports') ?>" class="nav-link" data-active="<?= $isHistory ? 'true' : 'false' ?>">
           <i class="fas fa-history text-[20px]"></i>
-          <span x-show="open">History</span>
-        </a>-->
+          <span x-show="open">Reports</span>
+        </a>
 
         <hr class="border-gray-300 my-4" />
 
@@ -82,7 +82,7 @@ $isProfile = ($uri === 'admin/profile');
   <a href="<?= base_url('/admin/profile') ?>" class="nav-link" data-active="<?= $isProfile ? 'true' : 'false' ?>">
           <i class="far fa-user-circle text-[16px]"></i>
           <span x-show="open">Profile</span>
-        </a>
+        </a>  
 
         <!-- Logout -->
   <a href="<?= base_url('/logout') ?>" class="nav-link hover:text-red-600">

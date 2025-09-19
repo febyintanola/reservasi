@@ -8,6 +8,11 @@ use App\Models\DriverAssignmentModel;
 use CodeIgniter\Controller;
 use DateTime;
 
+/**
+ * Controller Booking Mobil
+ *
+ * Mengelola pemesanan mobil oleh user dan CRUD/admin operasi terkait driver & assignment.
+ */
 class CarController extends BaseController
 {
     public function index()
@@ -15,6 +20,7 @@ class CarController extends BaseController
         return redirect()->to('user/car/form');
     }
 
+    /** Form pemesanan mobil (user). */
     public function form()
     {
         $session = session();
@@ -27,6 +33,7 @@ class CarController extends BaseController
         return view('user/car/form', ['user_id' => $user_id]);
     }
 
+    /** Simpan pemesanan mobil dari user. */
     public function save()
     {
         $model = new CarModel();
@@ -67,7 +74,7 @@ class CarController extends BaseController
                 'message' => 'Silakan tunggu konfirmasi dari admin.'
             ]);
     }
-    //Admin 
+    // Admin
     public function tambahdriver()
     {
         $model = new DriverModel();
@@ -83,7 +90,7 @@ class CarController extends BaseController
         return redirect()->to('/admin/driver')->with('success', 'Driver berhasil ditambahkan.');
     }
 
-        // Tampilkan form assign driver & mobil
+    // Tampilkan form assign driver & mobil
         public function assignForm($id)
         {
             $carModel = new CarModel();
@@ -95,6 +102,7 @@ class CarController extends BaseController
             }
             $start = $booking['tanggal_pergi'];
             $end   = $booking['tanggal_pulang'];
+
 
             // Ambil assignment booking ini (jika edit)
             $currentAssignment = $assignmentModel->where('car_booking_id', $id)->first();
@@ -125,59 +133,52 @@ class CarController extends BaseController
             ]);
         }
 
-        // Proses simpan assign driver & mobil
+    // Proses simpan assign driver & mobil
         public function assignSave($id)
         {
-            $carModel = new CarModel();
-            $booking = $carModel->find($id);
-            if (!$booking) {
-                return redirect()->to('admin')->with('error', 'Booking mobil tidak ditemukan');
-            }
+            $assignmentModel = new \App\Models\DriverAssignmentModel();
+            $driverModel = new \App\Models\DriverModel();
+
             $driver_id   = (int)$this->request->getPost('driver_id');
             $mobil_jenis = $this->request->getPost('mobil_jenis');
             $mobil_plat  = $this->request->getPost('mobil_plat');
+            $start_datetime = $this->request->getPost('start_datetime'); // dari form
+            $notes = $this->request->getPost('notes');
 
-            if (!$this->isDriverAvailable($driver_id, $booking['tanggal_pergi'], $booking['tanggal_pulang'], $id)) {
-                return redirect()->back()->withInput()->with('error', 'Driver tersebut sudah ditugaskan pada tanggal yang sama.');
-            }
-
-            $assignmentModel = new DriverAssignmentModel();
-            $existing = $assignmentModel->where('car_booking_id', $id)->first();
             $dataAssign = [
                 'car_booking_id' => $id,
                 'driver_id'      => $driver_id,
                 'mobil_jenis'    => $mobil_jenis,
                 'mobil_plat'     => $mobil_plat,
+                'start_datetime' => $start_datetime,
+                'reminder_sent'  => 0,
+                'notes'          => $notes,
             ];
+
+            // Insert/update assignment
+            $existing = $assignmentModel->where('car_booking_id', $id)->first();
             if ($existing) {
                 $assignmentModel->update($existing['id'], $dataAssign);
+                $assignmentId = $existing['id'];
             } else {
                 $assignmentModel->insert($dataAssign);
+                $assignmentId = $assignmentModel->getInsertID();
             }
 
-            // Jika booking sudah accepted/ongoing, set driver menjadi On Duty
-            try {
-                if (in_array(strtolower($booking['status'] ?? ''), ['accepted','ongoing'], true)) {
-                    $driverModel = new DriverModel();
-                    $driverRecord = $driverModel->find($driver_id);
-                    if ($driverRecord) {
-                        $driverModel->update((int)$driverRecord['id'], ['status' => 'On Duty']);
-                    } else {
-                        // Legacy: driver_id mungkin adalah users.id
-                        $byUser = $driverModel->where('user_id', $driver_id)->first();
-                        if ($byUser) {
-                            $driverModel->update((int)$byUser['id'], ['status' => 'On Duty']);
-                        }
-                    }
-                }
-            } catch (\Throwable $e) { /* abaikan */ }
-            return redirect()->to('admin/car/detailMobil/' . $id)->with('message', 'Driver & Mobil berhasil di-assign.');
+            // Kirim notifikasi ke driver
+            $driver = $driverModel->find($driver_id);
+            $notif = new \App\Libraries\NotificationService();
+            $assignment = (object) $assignmentModel->find($assignmentId);
+            $notif->notifyDriverAssignment($assignment, (object)$driver);
+
+            return redirect()->to('admin/car/detailMobil/' . $id)
+                ->with('message', 'Driver & Mobil berhasil di-assign dan notifikasi dikirim.');
         }
 
-        /**
-         * Cek ketersediaan driver berdasarkan overlap tanggal (hari penuh).
-         * Jika ingin mendukung jam, perlu kolom tambahan jam_mulai/jam_selesai.
-         */
+    /**
+     * Cek ketersediaan driver berdasarkan overlap tanggal (hari penuh).
+     * Jika ingin mendukung jam, perlu kolom tambahan jam_mulai/jam_selesai.
+     */
         private function isDriverAvailable(int $driverId, string $start, string $end, int $currentBookingId = null): bool
         {
             if ($driverId <= 0) return false;
@@ -211,11 +212,13 @@ class CarController extends BaseController
         return view('admin/car/list', ['drivers' => $drivers]); // reuse view placeholder name changed soon
     }
 
+    /** Form tambah driver (admin). */
     public function driverCreate()
     {
         return view('admin/car/tambah');
     }
 
+    /** Simpan driver baru (admin). */
     public function driverStore()
     {
         $driverModel = new DriverModel();
@@ -252,6 +255,7 @@ class CarController extends BaseController
         return redirect()->to('admin/driver')->with('success', 'Driver ditambahkan.');
     }
 
+    /** Form edit driver (admin). */
     public function driverEdit($id)
     {
         $driverModel = new DriverModel();
@@ -260,6 +264,7 @@ class CarController extends BaseController
         return view('admin/car/edit', ['driver' => $driver]);
     }
 
+    /** Update data driver (admin). */
     public function driverUpdate($id)
     {
         $driverModel = new DriverModel();
@@ -296,11 +301,13 @@ class CarController extends BaseController
         return redirect()->to('admin/driver')->with('success','Driver diperbarui.');
     }
 
+    /** Form tambah booking mobil (admin). */
     public function create()
     {
         return view('admin/car/tambah');
     }
 
+    /** Simpan booking mobil (admin). */
     public function store()
     {
         $model = new CarModel();
@@ -337,6 +344,7 @@ class CarController extends BaseController
         return redirect()->to('admin/car')->with('success', 'Booking mobil berhasil ditambahkan');
     }
 
+    /** Form edit booking mobil (admin). */
     public function edit($id)
     {
         $model = new CarModel();
@@ -347,6 +355,7 @@ class CarController extends BaseController
         return view('admin/car/edit', ['booking' => $booking]);
     }
 
+    /** Update booking mobil (admin). */
     public function update($id)
     {
         $model = new CarModel();
@@ -394,11 +403,17 @@ class CarController extends BaseController
                     // Coba drivers.id terlebih dahulu
                     $maybeDriver = $driverModel->find((int)$assignment['driver_id']);
                     if ($maybeDriver) {
-                        $driverId = (int)$maybeDriver['id'];
+                        $driverId = is_array($maybeDriver)
+                            ? (int)($maybeDriver['id'] ?? 0)
+                            : (int)($maybeDriver->id ?? 0);
                     } else {
                         // Legacy: driver_assignments.driver_id adalah users.id
                         $byUser = $driverModel->where('user_id', (int)$assignment['driver_id'])->first();
-                        if ($byUser) $driverId = (int)$byUser['id'];
+                        if ($byUser) {
+                            $driverId = is_array($byUser)
+                                ? (int)($byUser['id'] ?? 0)
+                                : (int)($byUser->id ?? 0);
+                        }
                     }
 
                     if ($driverId) {
@@ -427,6 +442,7 @@ class CarController extends BaseController
         return redirect()->to('admin/car')->with('success', 'Booking mobil berhasil diperbarui');
     }
 
+    /** Detail booking mobil (admin). */
     public function detail($id)
     {
         $model = new CarModel();
@@ -483,9 +499,7 @@ class CarController extends BaseController
         ]);
     }
 
-    /**
-     * Tampilkan detail booking mobil untuk user (dengan assignment driver/mobil jika ada)
-     */
+    /** Tampilkan detail booking mobil untuk user (dengan assignment driver/mobil jika ada). */
     public function userDetail($id)
     {
         $carModel = new CarModel();

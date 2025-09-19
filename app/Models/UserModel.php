@@ -3,6 +3,7 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
+/** Model user (akun login). */
 class UserModel extends Model
 {
     protected $table = 'users';
@@ -14,6 +15,7 @@ class UserModel extends Model
     protected $useTimestamps = true;
     protected $useSoftDeletes = true;
 
+    /** Ambil user + profil (join) berdasarkan users.id. */
     public function getUserWithProfileById($id)
     {
         return $this->select('users.*, 

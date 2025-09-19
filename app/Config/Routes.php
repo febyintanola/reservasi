@@ -49,7 +49,7 @@ $routes->group('', ['filter' => 'auth'], function($routes) {
 $routes->group('admin', ['filter' => 'auth'], function($routes) {
 
     // Semua ini hanya untuk role 'admin'
-    $routes->group('', ['filter' => 'role:admin'], function($routes) {
+    $routes->group('', ['filter' => 'role:admin'], static function($routes) {
         $routes->get('/', 'AdminDashboardController::index');
         $routes->get('dashboard', 'AdminDashboardController::index');
         $routes->get('booking/detail/(:num)', 'AdminDashboardController::detail/$1');
@@ -89,6 +89,11 @@ $routes->group('admin', ['filter' => 'auth'], function($routes) {
         // Profile (admin)
         $routes->get('profile', 'UserController::profile');
         $routes->post('profile/update', 'UserController::update');
+        $routes->get('reports', 'ReportsController::index');
+        $routes->get('reports/export/rooms/excel', 'ReportsController::exportRoomsExcel');
+        $routes->get('reports/export/rooms/pdf', 'ReportsController::exportRoomsPdf');
+        $routes->get('reports/export/cars/excel', 'ReportsController::exportCarsExcel');
+        $routes->get('reports/export/cars/pdf', 'ReportsController::exportCarsPdf');
     });
 
 });

@@ -5,14 +5,24 @@ use App\Models\CarModel;
 use App\Models\BookingRuangModel;
 use App\Models\DriverAssignmentModel;
 use App\Models\DriverModel;
+use App\Models\RoomModel;
 
+/**
+ * Dashboard Admin
+ *
+ * Menggabungkan data reservasi ruang dan mobil, menampilkan ringkasan,
+ * dan menyediakan aksi approve/reject untuk kedua jenis reservasi.
+ */
 class AdminDashboardController extends BaseController {
     public function index()
     {
         $bookingRuangModel = new BookingRuangModel();
         $bookingMobilModel = new CarModel();
+        $roomModel         = new RoomModel();
 
-        // Ambil data reservasi ruangan
+        $today = date('Y-m-d');
+
+        // Ambil data reservasi ruangan beserta pemesan (profil)
         $ruang = $bookingRuangModel
             ->select('room_bookings.id, room_bookings.acara, room_bookings.tanggal, room_bookings.status, user_profile.nama as pemesan_nama, user_profile.divisi as pemesan_divisi')
             ->join('user_profile', 'user_profile.user_id = room_bookings.user_id', 'left')
@@ -22,7 +32,7 @@ class AdminDashboardController extends BaseController {
             $item['tipe'] = 'Reservasi Ruangan';
         }
 
-        // Ambil data reservasi mobil
+        // Ambil data reservasi mobil beserta pemesan (profil)
         $mobil = $bookingMobilModel
             ->select('car_bookings.id, car_bookings.tujuan, car_bookings.tanggal_pergi, car_bookings.status, user_profile.nama as pemesan_nama, user_profile.divisi as pemesan_divisi')
             ->join('user_profile', 'user_profile.user_id = car_bookings.user_id', 'left')
@@ -35,7 +45,7 @@ class AdminDashboardController extends BaseController {
             unset($item['tujuan'], $item['tanggal_pergi']);
         }
 
-        // Gabung data reservasi ruangan dan mobil
+    // Gabung data reservasi ruangan dan mobil
         $bookings = array_merge($ruang, $mobil);
 
         // Urutkan berdasarkan tanggal terbaru
@@ -43,23 +53,54 @@ class AdminDashboardController extends BaseController {
             return strtotime($b['tanggal']) <=> strtotime($a['tanggal']);
         });
 
-        // Hitung total reservasi dengan status 'pending'
+        // Hitung total reservasi dengan status 'pending' (menunggu persetujuan)
         $totalBerjalan = 0;
+        $reservasiHariIni = 0;
+        $todayBookings = [];
         foreach ($bookings as $booking) {
-            if (strtolower($booking['status']) === 'pending') {
+            $status = strtolower($booking['status'] ?? '');
+            if ($status === 'pending') {
                 $totalBerjalan++;
             }
+            if (!empty($booking['tanggal']) && substr($booking['tanggal'], 0, 10) === $today) {
+                $reservasiHariIni++;
+                $todayBookings[] = $booking;
+            }
         }
+
+        // Utilisasi ruang: berapa ruang terpakai hari ini (pending/accepted) dibanding total ruang
+        $totalRooms = (int) $roomModel->countAllResults();
+        $ruangDipakaiHariIni = 0;
+        if ($totalRooms > 0) {
+            $roomsBookedToday = $bookingRuangModel
+                ->select('room_id, status')
+                ->where('tanggal', $today)
+                ->whereIn('status', ['pending', 'accepted'])
+                ->findAll();
+            $uniqueRoomIds = [];
+            foreach ($roomsBookedToday as $rb) {
+                if (!empty($rb['room_id'])) {
+                    $uniqueRoomIds[$rb['room_id']] = true;
+                }
+            }
+            $ruangDipakaiHariIni = count($uniqueRoomIds);
+        }
+        $utilisasiRuangPersen = $totalRooms > 0 ? round(($ruangDipakaiHariIni / $totalRooms) * 100) : 0;
 
         return view('admin/dashboard', [
             'bookings'     => $bookings,
             'totalRuang'   => count($ruang),
             'totalMobil'   => count($mobil),
-            'totalBerjalan'=> $totalBerjalan
+            'totalBerjalan'=> $totalBerjalan,
+            'reservasiHariIni' => $reservasiHariIni,
+            'todayBookings'    => $todayBookings,
+            'totalRooms'       => $totalRooms,
+            'ruangDipakaiHariIni' => $ruangDipakaiHariIni,
+            'utilisasiRuangPersen' => $utilisasiRuangPersen,
         ]);
     }
 
-    // Detail booking ruang (lama)
+    // Detail booking ruang
     public function detail($id)
     {
         $bookingRuangModel = new BookingRuangModel();
@@ -95,7 +136,7 @@ class AdminDashboardController extends BaseController {
         return view('admin/ruang/detail', $data);
     }
 
-    // Detail booking mobil (baru)
+    // Detail booking mobil
     public function detailMobil($id)
     {
         $carModel = new CarModel();
@@ -148,7 +189,10 @@ class AdminDashboardController extends BaseController {
             ->with('message', 'Booking telah ditolak');
     }
 
-    // APPROVE booking mobil
+    /**
+     * Setujui booking mobil serta sinkronkan status driver menjadi On Duty
+     * bila sudah ada penugasan.
+     */
     public function approveCar($id)
     {
         $carModel = new CarModel();
@@ -171,8 +215,14 @@ class AdminDashboardController extends BaseController {
                 // Coba treat driver_id sebagai drivers.id (baru)
                 $maybeDriver = $driverModel->find((int)$assignment['driver_id']);
                 if ($maybeDriver) {
-                    $driverId = (int)$maybeDriver['id'];
-                    $legacyUserId = $maybeDriver['user_id'] ?? null; // jika sudah terhubung
+                    // Support hasil array atau object (entity)
+                    if (is_array($maybeDriver)) {
+                        $driverId = (int)($maybeDriver['id'] ?? 0);
+                        $legacyUserId = $maybeDriver['user_id'] ?? null; // jika sudah terhubung
+                    } else {
+                        $driverId = (int)($maybeDriver->id ?? 0);
+                        $legacyUserId = $maybeDriver->user_id ?? null;
+                    }
                 } else {
                     // Legacy: driver_assignments.driver_id menyimpan users.id
                     $legacyUserId = (int)$assignment['driver_id'];
@@ -194,7 +244,10 @@ class AdminDashboardController extends BaseController {
             ->with('message', 'Booking mobil disetujui');
     }
 
-    // REJECT booking mobil
+    /**
+     * Tolak booking mobil serta kembalikan status driver ke Available
+     * jika tidak ada tugas lain yang masih berjalan.
+     */
     public function rejectCar($id)
     {
         $carModel = new CarModel();
@@ -217,8 +270,13 @@ class AdminDashboardController extends BaseController {
                 // Coba treat driver_id sebagai drivers.id (baru)
                 $maybeDriver = $driverModel->find((int)$assignment['driver_id']);
                 if ($maybeDriver) {
-                    $driverId = (int)$maybeDriver['id'];
-                    $legacyUserId = $maybeDriver['user_id'] ?? null;
+                    if (is_array($maybeDriver)) {
+                        $driverId = (int)($maybeDriver['id'] ?? 0);
+                        $legacyUserId = $maybeDriver['user_id'] ?? null;
+                    } else {
+                        $driverId = (int)($maybeDriver->id ?? 0);
+                        $legacyUserId = $maybeDriver->user_id ?? null;
+                    }
                 } else {
                     // Legacy: driver_assignments.driver_id menyimpan users.id
                     $legacyUserId = (int)$assignment['driver_id'];
@@ -252,6 +310,7 @@ class AdminDashboardController extends BaseController {
             ->with('message', 'Booking mobil ditolak');
     }
 
+    /** @var CarModel Model untuk CRUD booking mobil (admin). */
     protected CarModel $carModel;
     
     public function __construct()
@@ -259,12 +318,18 @@ class AdminDashboardController extends BaseController {
         $this->carModel = new CarModel();
     }
 
+    /**
+     * Daftar booking mobil (admin)
+     */
     public function carindex()
     {
         $bookings = $this->carModel->orderBy('tanggal_pergi', 'DESC')->findAll();
         return view('admin/car/list', ['bookings' => $bookings]);
     }
 
+    /**
+     * Tambah booking mobil (admin membuat manual)
+     */
     public function tambah()
     {
         $rules =[
@@ -303,11 +368,12 @@ class AdminDashboardController extends BaseController {
 
     }
 
+    /** Hitung jumlah hari antara tanggal pergi dan pulang (inklusif). */
     private function hitungHari(string $tanggalPergi, string $tanggalPulang): int
     {
         try {
-            $start = new DateTime($tanggalPergi);
-            $end   = new DateTime($tanggalPulang);
+            $start = new \DateTime($tanggalPergi);
+            $end   = new \DateTime($tanggalPulang);
             return $start->diff($end)->days + 1;
         } catch (\Throwable $e) {
             return 1;

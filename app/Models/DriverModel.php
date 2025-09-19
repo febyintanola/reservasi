@@ -3,6 +3,7 @@
 namespace App\Models;
 use CodeIgniter\Model;
 
+/** Model untuk tabel drivers (data sopir). */
 class DriverModel extends Model
 {
     protected $table = 'drivers';

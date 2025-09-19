@@ -6,6 +6,7 @@ use CodeIgniter\Filters\FilterInterface;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
 
+/** Filter role-based access control (RBAC) sederhana. */
 class RoleFilter implements FilterInterface
 {
     /**

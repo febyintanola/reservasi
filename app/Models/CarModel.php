@@ -4,6 +4,9 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
+/**
+ * Model untuk tabel car_bookings (pemesanan mobil)
+ */
 class CarModel extends Model
 {
     protected $table = 'car_bookings';
@@ -29,10 +32,12 @@ class CarModel extends Model
         'car_id'              // relasi ke mobil (jika ada tabel daftar mobil)
     ];
 
+    /** Ambil semua booking mobil milik user tertentu. */
     public function getByUser($userId)
     {
         return $this->where('user_id', $userId)->findAll();
     }
+    /** Ambil semua booking mobil untuk listing admin (urut terbaru). */
     public function getAllBookings()
     {
     // gunakan tanggal_pergi sebagai acuan urutan

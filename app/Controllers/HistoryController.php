@@ -6,6 +6,9 @@ use App\Models\CarModel;
 use App\Models\RoomModel;
 use CodeIgniter\Controller;
 
+/**
+ * Riwayat reservasi user (ruangan dan mobil)
+ */
 class HistoryController extends BaseController
 {
     public function index()
@@ -21,13 +24,14 @@ class HistoryController extends BaseController
         // History ruang
         $historyRuang = array_map(function($row) use ($ruangModel) {
             $ruangan = $ruangModel->find($row['room_id']);
+            $namaRuangan = is_array($ruangan) ? ($ruangan['nama_ruangan'] ?? '-') : ($ruangan->nama_ruangan ?? '-');
             return [
                 'id' => $row['id'],
                 'judul' => $row['acara'],
                 'tanggal' => $row['tanggal'],
                 'waktu_mulai' => $row['jam_mulai'],
                 'waktu_selesai' => $row['jam_selesai'],
-                'lokasi' => $ruangan ? $ruangan['nama_ruangan'] : '-',
+                'lokasi' => $namaRuangan,
                 'status' => $row['status']
             ];
         }, $bookingRuangModel->getByUser($userId));
@@ -51,6 +55,7 @@ class HistoryController extends BaseController
         ]);
     }
 
+    /** Detail riwayat booking ruang untuk user. */
     public function detailRuang($id)
     {
         $session = session();
@@ -65,7 +70,8 @@ class HistoryController extends BaseController
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound('Booking tidak ditemukan atau tidak milik Anda.');
         }
 
-        $ruangan = $ruangModel->find($booking['room_id']);
+    $ruangan = $ruangModel->find($booking['room_id']);
+    $namaRuangan = is_array($ruangan) ? ($ruangan['nama_ruangan'] ?? '-') : ($ruangan->nama_ruangan ?? '-');
 
         $data = [
             'id' => $booking['id'],
@@ -73,10 +79,10 @@ class HistoryController extends BaseController
             'tanggal' => $booking['tanggal'],
             'waktu_mulai' => $booking['jam_mulai'],
             'waktu_selesai' => $booking['jam_selesai'],
-            'lokasi' => $ruangan ? $ruangan['nama_ruangan'] : '-',
-            'peserta' => $booking['peserta'] ?? '-',         // sesuaikan dengan key 'peserta'
-            'task' => $booking['Task'] ?? '-',                // huruf besar T
-            'permohonan' => $booking['kebutuhan'] ?? '-',     // pakai 'kebutuhan' karena 'permohonan' tidak ada
+            'lokasi' => $namaRuangan,
+            'peserta' => $booking['peserta'] ?? '-',         
+            'task' => $booking['Task'] ?? '-',                
+            'permohonan' => $booking['kebutuhan'] ?? '-',     
             'keterangan' => $booking['keterangan'] ?? '-',
             'status' => $booking['status'],
         ];
@@ -84,6 +90,7 @@ class HistoryController extends BaseController
         return view('user/ruang/detail', $data);
     }
 
+    /** Detail riwayat booking mobil untuk user. */
     public function detailMobil($id)
     {
         $session = session();

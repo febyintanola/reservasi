@@ -1,68 +1,126 @@
-# CodeIgniter 4 Application Starter
+# Aplikasi Reservasi (Ruang Rapat & Kendaraan)
 
-## What is CodeIgniter?
+Aplikasi internal untuk mengelola reservasi ruang rapat dan pemesanan kendaraan dinas.
+Dibangun dengan CodeIgniter 4 (PHP 8.1+). Mendukung role Admin, User, dan Driver.
 
-CodeIgniter is a PHP full-stack web framework that is light, fast, flexible and secure.
-More information can be found at the [official site](https://codeigniter.com).
+## Fitur Utama
 
-This repository holds a composer-installable app starter.
-It has been built from the
-[development repository](https://github.com/codeigniter4/CodeIgniter4).
+- Reservasi ruang rapat (cek ketersediaan per jam, form booking, riwayat)
+- Pemesanan kendaraan (isi form, lihat detail, riwayat)
+- Penugasan driver & kendaraan oleh admin (assign, sinkron status driver)
+- Dashboard Admin (ringkasan booking + detail)
+- Dashboard Driver (tugas hari ini/berjalan/riwayat, update status, unggah foto opsional)
+- Laporan & Export (Excel/PDF) untuk ruang/ken. [butuh dependency export]
+- Notifikasi email (opsional) ke driver saat penugasan
 
-More information about the plans for version 4 can be found in [CodeIgniter 4](https://forum.codeigniter.com/forumdisplay.php?fid=28) on the forums.
+## Persyaratan
 
-You can read the [user guide](https://codeigniter.com/user_guide/)
-corresponding to the latest version of the framework.
+- PHP 8.1 atau lebih baru
+- Ekstensi PHP: intl, mbstring, json (default), curl (opsional)
+- Database: MySQL/MariaDB
+- Composer untuk mengelola dependency
 
-## Installation & updates
+## Instalasi Cepat
 
-`composer create-project codeigniter4/appstarter` then `composer update` whenever
-there is a new release of the framework.
+1) Clone repo ini, lalu install dependency composer
 
-When updating, check the release notes to see if there are any changes you might need to apply
-to your `app` folder. The affected files can be copied or merged from
-`vendor/codeigniter4/framework/app`.
+2) Salin file `env` menjadi `.env` dan atur konfigurasi dasar:
 
-## Setup
+- App URL
+  - `app.baseURL = 'http://localhost:8080/'` (sesuaikan)
+- Database
+  - `database.default.hostname`, `database.default.database`, `database.default.username`, `database.default.password`
+- Email (opsional, untuk notifikasi)
+  - `email.fromEmail`, `email.fromName` jika memakai `NotificationService`
 
-Copy `env` to `.env` and tailor for your app, specifically the baseURL
-and any database settings.
+3) Migrasi skema (bila tersedia) dan siapkan tabel yang dipakai aplikasi: 
+- `users`, `user_profile`
+- `room_bookings`, `rooms`
+- `car_bookings`
+- `drivers`, `driver_assignments`
+- `password_resets` (untuk fitur lupa password)
+- `notifications` (jika mencatat notifikasi)
 
-## Important Change with index.php
+4) Jalankan server pengembangan:
 
-`index.php` is no longer in the root of the project! It has been moved inside the *public* folder,
-for better security and separation of components.
+```powershell
+php spark serve
+```
 
-This means that you should configure your web server to "point" to your project's *public* folder, and
-not to the project root. A better practice would be to configure a virtual host to point there. A poor practice would be to point your web server to the project root and expect to enter *public/...*, as the rest of your logic and the
-framework are exposed.
+Lalu buka di browser: http://localhost:8080
 
-**Please** read the user guide for a better explanation of how CI4 works!
+## Akun & Role
 
-## Repository Management
+- User umum mendaftar via menu Register
+- Role otomatis berdasarkan divisi (contoh di `AuthController::storeRegister()`):
+  - `umum` => admin
+  - `driver` => driver
+  - selain itu => user
+- Admin bisa mengakses: `/admin`
+- Driver mengakses: `/driver/dashboard`
 
-We use GitHub issues, in our main repository, to track **BUGS** and to track approved **DEVELOPMENT** work packages.
-We use our [forum](http://forum.codeigniter.com) to provide SUPPORT and to discuss
-FEATURE REQUESTS.
+## Rute Penting (ringkas)
 
-This repository is a "distribution" one, built by our release preparation script.
-Problems with it can be raised on our forum, or as issues in the main repository.
+- Public
+  - `GET /login`, `POST /login`
+  - `GET /register`, `POST /register`
+  - Lupa/Reset password: `GET/POST /forgot-password`, `GET /reset-password/{token}`, `POST /reset-password`
 
-## Server Requirements
+- User (login & role:user)
+  - Home: `GET /` atau `/home`
+  - Ruang: `GET /ruang`, `POST /ruang/check`, `GET /ruang/booking-form`, `POST /ruang/save-booking`
+  - Mobil: `GET /car/form`, `POST /car/save`
+  - Profil: `GET /user/profile`, `POST /profile/update`
+  - Riwayat: `GET /history`
 
-PHP version 8.1 or higher is required, with the following extensions installed:
+- Admin (login & role:admin)
+  - Dashboard: `GET /admin`
+  - Car bookings Admin: `GET /admin/car`, `GET /admin/car/detail/{id}`, CRUD dasar
+  - Assign Driver/Mobil: `GET /admin/car/assign/{bookingId}`, `POST /admin/car/assign_save/{bookingId}`
+  - Ruang Admin: `GET /admin/ruang`, `GET /admin/ruang/create`, `POST /admin/ruang/store`, edit/update
+  - Laporan: `GET /admin/reports` + export Excel/PDF
 
-- [intl](http://php.net/manual/en/intl.requirements.php)
-- [mbstring](http://php.net/manual/en/mbstring.installation.php)
+- Driver (login & role:driver)
+  - Dashboard: `GET /driver/dashboard`
+  - Detail tugas: `GET /driver/jobs/{bookingId}`
+  - Update status tugas: `POST /driver/jobs/{bookingId}/status`
 
-> [!WARNING]
-> - The end of life date for PHP 7.4 was November 28, 2022.
-> - The end of life date for PHP 8.0 was November 26, 2023.
-> - If you are still using PHP 7.4 or 8.0, you should upgrade immediately.
-> - The end of life date for PHP 8.1 will be December 31, 2025.
+Detail lengkap ada di `app/Config/Routes.php`.
 
-Additionally, make sure that the following extensions are enabled in your PHP:
+## Export Excel/PDF (opsional)
 
-- json (enabled by default - don't turn it off)
-- [mysqlnd](http://php.net/manual/en/mysqlnd.install.php) if you plan to use MySQL
-- [libcurl](http://php.net/manual/en/curl.requirements.php) if you plan to use the HTTP\CURLRequest library
+Fitur export di `app/Libraries/ExportService.php` memerlukan paket berikut:
+
+- Excel: `phpoffice/phpspreadsheet`
+- PDF: `dompdf/dompdf`
+
+Install via Composer:
+
+```powershell
+composer require phpoffice/phpspreadsheet:^1.29 ; composer require dompdf/dompdf:^2.0
+```
+
+## Struktur Direktori (ringkas)
+
+- `app/Controllers` – logika HTTP (Admin, User, Driver, Reports, dll.)
+- `app/Models` – akses database (CarModel, BookingRuangModel, dsb.)
+- `app/Libraries` – layanan (ExportService, NotificationService)
+- `app/Filters` – filter auth/role
+- `app/Views` – tampilan
+- `public/` – web root (index.php, assets)
+
+## Catatan Implementasi
+
+- Beberapa tempat menggunakan normalisasi untuk hasil query (array vs object) agar aman di semua environment.
+- Status driver disinkronkan ketika booking mobil berubah status (accepted/ongoing => On Duty, done/rejected => Available jika tidak ada tugas lain yang berjalan).
+- Notifikasi email driver (opsional) lewat `NotificationService` – pastikan konfigurasi email di `.env` atau di `Config\\Email.php`.
+- Di routes ada entri `RuangRapatController` (opsional). Jika controller tersebut belum tersedia, nonaktifkan rute terkait atau tambahkan controllernya.
+
+## Pengembangan
+
+- Jalankan server dev: `php spark serve`
+- Unit test (jika tersedia): `composer test`
+
+## Lisensi
+
+MIT (mengikuti lisensi CodeIgniter Starter). Lihat file LICENSE.

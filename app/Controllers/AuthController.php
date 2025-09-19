@@ -5,19 +5,28 @@ namespace App\Controllers;
 use App\Models\UserModel;
 use App\Models\UserProfileModel;
 use CodeIgniter\I18n\Time;
-use CodeIgniter\Controller;
 use LdapRecord\Container;
 use LdapRecord\Connection;
 use LdapRecord\Auth\BindException;
 use LdapRecord\Models\ActiveDirectory\User as LdapUser;
 
+/**
+ * Autentikasi dan Manajemen Akun
+ *
+ * - Registrasi user baru
+ * - Login/Logout
+ * - Lupa/Reset password (token sederhana)
+ * - Opsi integrasi Active Directory (kode disiapkan, masih nonaktif)
+ */
 class AuthController extends BaseController
 {
+    /** Tampilkan form registrasi. */
     public function register()
     {
         return view('auth/register');
     }
 
+/** Simpan data registrasi user baru. */
 public function storeRegister()
 {
     $validation = \Config\Services::validation();
@@ -100,11 +109,13 @@ public function storeRegister()
 }
 
 
+    /** Tampilkan form login. */
     public function login()
     {
         return view('auth/login');
     }
 
+    /** Proses login: validasi, cek user, verifikasi password, set session, dan redirect sesuai role. */
     public function loginProcess()
     {
         $userModel = new UserModel();
@@ -201,7 +212,7 @@ public function storeRegister()
         }
     
 
-        // Login via AD
+        // Login via AD (opsional - masih dinonaktifkan)
         /*try {
             $connection = new Connection([
                 'hosts'            => ['ad.domain.local'],
@@ -267,17 +278,20 @@ public function storeRegister()
         }*/
     }
 
+    /** Logout dan hapus sesi. */
     public function logout()
     {
         session()->destroy();
         return redirect()->to('/login')->with('success', 'Anda berhasil logout.');
     }
 
+    /** Contoh halaman profil sederhana (bisa diarahkan ke controller lain). */
     public function profile()
     {
         return view('profile');
     }
 
+    /** Halaman unauthorized (403). */
     public function unauthorized()
     {
         // Return a simple unauthorized page with 403 status
@@ -287,11 +301,13 @@ public function storeRegister()
     }
 
     /* ================== FORGOT / RESET PASSWORD ================== */
+    /** Tampilkan form lupa password. */
     public function forgotPasswordForm()
     {
         return view('auth/forgot_password');
     }
 
+    /** Kirim link reset (disimpan dan ditampilkan via flash - untuk produksi sebaiknya kirim email). */
     public function sendResetLink()
     {
         $email = trim($this->request->getPost('email'));
@@ -321,6 +337,7 @@ public function storeRegister()
         return redirect()->back()->with('message', 'Link reset (sementara tampil di sini): ' . $resetLink);
     }
 
+    /** Tampilkan form reset password. */
     public function resetPasswordForm($token)
     {
         if (!$token) {
@@ -329,6 +346,7 @@ public function storeRegister()
         return view('auth/reset_password', ['token' => $token]);
     }
 
+    /** Proses reset password berdasarkan token. */
     public function resetPasswordProcess()
     {
         $token = $this->request->getPost('token');

@@ -4,8 +4,10 @@ namespace App\Controllers;
 use App\Models\UserModel;
 use App\Models\UserProfileModel;
 
+/** Profil user (admin & user). */
 class UserController extends BaseController
 {
+    /** Tampilkan halaman profil sesuai konteks (admin/user). */
     public function profile()
     {
         $session = session();
@@ -34,6 +36,7 @@ class UserController extends BaseController
         ]);
     }
 
+    /** Update data profil dan foto (opsional). */
     public function update()
 {
     $userId = session()->get('user_id');
@@ -83,7 +86,7 @@ class UserController extends BaseController
         $userProfileModel->insert($profileData);
     }
 
-    // Redirect back to profile page depending on scope
+    // Redirect kembali ke halaman profil sesuai scope
     $role = strtolower(session()->get('role') ?? 'user');
     $isAdminScope = (strpos(current_url(), '/admin') !== false) || ($role === 'admin' && strpos(previous_url(), '/admin') !== false);
     $dest = $isAdminScope ? '/admin/profile' : '/user/profile';
