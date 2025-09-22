@@ -87,6 +87,55 @@ class AdminDashboardController extends BaseController {
         }
         $utilisasiRuangPersen = $totalRooms > 0 ? round(($ruangDipakaiHariIni / $totalRooms) * 100) : 0;
 
+        // Jadwal hari ini (detail) - Ruang Rapat
+        $todayRoomSchedule = $bookingRuangModel
+            ->select('room_bookings.id, room_bookings.acara, room_bookings.tanggal, room_bookings.jam_mulai, room_bookings.jam_selesai, rooms.nama_ruangan, user_profile.nama as pemesan_nama, user_profile.divisi as pemesan_divisi, room_bookings.status')
+            ->join('rooms', 'rooms.id = room_bookings.room_id', 'left')
+            ->join('user_profile', 'user_profile.user_id = room_bookings.user_id', 'left')
+            ->where('room_bookings.tanggal', $today)
+            ->orderBy('room_bookings.jam_mulai', 'ASC')
+            ->findAll();
+
+        // Jadwal hari ini (detail) - Mobil, include driver assignment & driver data
+        $assignmentModel = new DriverAssignmentModel();
+        $driverModel     = new DriverModel();
+        // booking yang aktif di hari ini: antara tanggal_pergi dan tanggal_pulang menyertakan hari ini
+        $todayCarSchedule = $bookingMobilModel
+            ->select('car_bookings.id, car_bookings.tujuan, car_bookings.tanggal_pergi, car_bookings.tanggal_pulang, car_bookings.status, user_profile.nama as pemesan_nama, user_profile.divisi as pemesan_divisi')
+            ->join('user_profile', 'user_profile.user_id = car_bookings.user_id', 'left')
+            ->groupStart()
+                ->where('car_bookings.tanggal_pergi <=', $today)
+                ->where('car_bookings.tanggal_pulang >=', $today)
+            ->groupEnd()
+            ->orderBy('car_bookings.tanggal_pergi', 'ASC')
+            ->findAll();
+
+        // Tambahkan info assignment dan driver (nama, foto, plat/jenis jika ada)
+        foreach ($todayCarSchedule as &$c) {
+            $assign = $assignmentModel->where('car_booking_id', $c['id'])->first();
+            $c['driver_nama'] = null;
+            $c['driver_foto'] = null;
+            $c['mobil_plat']  = $assign['mobil_plat'] ?? null;
+            $c['mobil_jenis'] = $assign['mobil_jenis'] ?? null;
+            if ($assign && !empty($assign['driver_id'])) {
+                // Coba asumsikan driver_id mengarah ke drivers.id, jika tidak ada coba map via users.id
+                $driver = $driverModel->find((int)$assign['driver_id']);
+                if (!$driver) {
+                    $byUser = $driverModel->where('user_id', (int)$assign['driver_id'])->first();
+                    $driver = $byUser ?: null;
+                }
+                if ($driver) {
+                    if (is_array($driver)) {
+                        $c['driver_nama'] = $driver['nama'] ?? null;
+                        $c['driver_foto'] = $driver['foto_url'] ?? null;
+                    } else {
+                        $c['driver_nama'] = $driver->nama ?? null;
+                        $c['driver_foto'] = $driver->foto_url ?? null;
+                    }
+                }
+            }
+        }
+
         return view('admin/dashboard', [
             'bookings'     => $bookings,
             'totalRuang'   => count($ruang),
@@ -97,6 +146,8 @@ class AdminDashboardController extends BaseController {
             'totalRooms'       => $totalRooms,
             'ruangDipakaiHariIni' => $ruangDipakaiHariIni,
             'utilisasiRuangPersen' => $utilisasiRuangPersen,
+            'todayRoomSchedule' => $todayRoomSchedule,
+            'todayCarSchedule'  => $todayCarSchedule,
         ]);
     }
 
@@ -379,5 +430,4 @@ class AdminDashboardController extends BaseController {
             return 1;
         }
     }
-    
 }

@@ -94,6 +94,7 @@ $routes->group('admin', ['filter' => 'auth'], function($routes) {
         $routes->get('reports/export/rooms/pdf', 'ReportsController::exportRoomsPdf');
         $routes->get('reports/export/cars/excel', 'ReportsController::exportCarsExcel');
         $routes->get('reports/export/cars/pdf', 'ReportsController::exportCarsPdf');
+
     });
 
 });

@@ -55,41 +55,68 @@
     </section>
 
 
-    <!-- Tabel Reservasi -->
+    <!-- Jadwal Hari Ini: Ruang Rapat & Mobil -->
     <section class="grid md:grid-cols-2 gap-6 mb-8">
-      <!-- Jadwal Hari Ini -->
+      <!-- Jadwal Ruang Rapat Hari Ini -->
       <div class="card p-6">
         <div class="flex items-center justify-between mb-4">
-          <h3 class="font-semibold text-slate-800">Jadwal Hari Ini</h3>
+          <h3 class="font-semibold text-slate-800">Ruang Rapat · Hari Ini</h3>
           <span class="text-xs text-slate-500"><?= date('Y-m-d') ?></span>
         </div>
-        <?php if (!empty($todayBookings ?? [])): ?>
-          <ul class="space-y-3">
-            <?php foreach ($todayBookings as $tb): ?>
-              <li class="flex items-start justify-between">
+        <?php if (!empty($todayRoomSchedule ?? [])): ?>
+          <ul class="divide-y divide-slate-200">
+            <?php foreach ($todayRoomSchedule as $r): ?>
+              <li class="py-3 flex items-start justify-between">
                 <div>
-                  <div class="font-medium text-slate-800"><?= esc($tb['acara'] ?? '-') ?></div>
+                  <div class="font-medium text-slate-800"><?= esc($r['acara'] ?? '-') ?></div>
                   <div class="text-xs text-slate-500">
-                    <?= esc($tb['tipe'] ?? '-') ?> · <?= esc($tb['pemesan_nama'] ?? '—') ?> (<?= esc($tb['pemesan_divisi'] ?? '-') ?>)
+                    <?= esc($r['nama_ruangan'] ?? '-') ?> · <?= esc($r['jam_mulai'] ?? '-') ?> - <?= esc($r['jam_selesai'] ?? '-') ?>
+                  </div>
+                  <div class="text-xs text-slate-500">
+                    Pemesan: <?= esc($r['pemesan_nama'] ?? '—') ?> (<?= esc($r['pemesan_divisi'] ?? '-') ?>)
                   </div>
                 </div>
                 <div class="text-xs">
-                  <?php if (($tb['tipe'] ?? '') === 'Reservasi Mobil'): ?>
-                    <a href="<?= base_url('admin/car/detailMobil/' . $tb['id']) ?>" class="text-blue-600 hover:underline">Detail</a>
-                  <?php else: ?>
-                    <a href="<?= base_url('admin/booking/detail/' . $tb['id']) ?>" class="text-blue-600 hover:underline">Detail</a>
-                  <?php endif; ?>
+                  <a href="<?= base_url('admin/booking/detail/' . $r['id']) ?>" class="text-blue-600 hover:underline">Detail</a>
                 </div>
               </li>
             <?php endforeach; ?>
           </ul>
         <?php else: ?>
-          <p class="text-sm text-slate-500">Tidak ada jadwal hari ini.</p>
+          <p class="text-sm text-slate-500">Tidak ada jadwal ruang rapat hari ini.</p>
         <?php endif; ?>
       </div>
 
-      <!-- Placeholder kolom kanan: bisa untuk notifikasi/approval queue nanti -->
-      <div></div>
+      <!-- Jadwal Mobil Hari Ini -->
+      <div class="card p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-semibold text-slate-800">Mobil · Hari Ini</h3>
+          <span class="text-xs text-slate-500"><?= date('Y-m-d') ?></span>
+        </div>
+        <?php if (!empty($todayCarSchedule ?? [])): ?>
+          <ul class="divide-y divide-slate-200">
+            <?php foreach ($todayCarSchedule as $c): ?>
+              <li class="py-3 flex items-start justify-between">
+                <div class="flex gap-3">
+                  <img src="<?= esc($c['driver_foto'] ?? base_url('public/css/default-avatar.png')) ?>" alt="Driver" class="w-10 h-10 rounded-full object-cover border border-slate-200">
+                  <div>
+                    <div class="font-medium text-slate-800">Tujuan: <?= esc($c['tujuan'] ?? '-') ?></div>
+                    <div class="text-xs text-slate-500">Driver: <?= esc($c['driver_nama'] ?? 'Belum ditugaskan') ?></div>
+                    <div class="text-xs text-slate-500">Mobil: <?= esc($c['mobil_jenis'] ?? '-') ?> <?= esc($c['mobil_plat'] ? '· ' . $c['mobil_plat'] : '') ?></div>
+                    <div class="text-xs text-slate-500">Pemesan: <?= esc($c['pemesan_nama'] ?? '—') ?> (<?= esc($c['pemesan_divisi'] ?? '-') ?>)</div>
+                    <div class="text-xs text-slate-500">Periode: <?= esc($c['tanggal_pergi'] ?? '-') ?> s/d <?= esc($c['tanggal_pulang'] ?? '-') ?></div>
+                  </div>
+                </div>
+                <div class="text-xs">
+                  <a href="<?= base_url('admin/car/detailMobil/' . $c['id']) ?>" class="text-blue-600 hover:underline">Detail</a>
+                </div>
+              </li>
+            <?php endforeach; ?>
+          </ul>
+        <?php else: ?>
+          <p class="text-sm text-slate-500">Tidak ada jadwal mobil hari ini.</p>
+        <?php endif; ?>
+      </div>
     </section>
 
     <!-- Tabel Reservasi Terbaru -->

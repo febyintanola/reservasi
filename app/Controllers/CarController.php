@@ -169,6 +169,14 @@ class CarController extends BaseController
             $driver = $driverModel->find($driver_id);
             $notif = new \App\Libraries\NotificationService();
             $assignment = (object) $assignmentModel->find($assignmentId);
+            // Pastikan assignment punya tanggal_pergi
+            if (!isset($assignment->tanggal_pergi)) {
+                $carModel = new CarModel();
+                $booking = $carModel->find($id);
+                if ($booking && isset($booking['tanggal_pergi'])) {
+                    $assignment->tanggal_pergi = $booking['tanggal_pergi'];
+                }
+            }
             $notif->notifyDriverAssignment($assignment, (object)$driver);
 
             return redirect()->to('admin/car/detailMobil/' . $id)
