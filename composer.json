@@ -16,6 +16,7 @@
         "codeigniter4/shield": "^1.2",
         "directorytree/ldaprecord": "^3.8",
         "dompdf/dompdf": "2.0",
+        "phpoffice/phpspreadsheet": "^5.1",
         "twilio/sdk": "^8.7"
     },
     "require-dev": {

@@ -90,9 +90,7 @@ $routes->group('admin', ['filter' => 'auth'], function($routes) {
         $routes->get('profile', 'UserController::profile');
         $routes->post('profile/update', 'UserController::update');
         $routes->get('reports', 'ReportsController::index');
-        $routes->get('reports/export/rooms/excel', 'ReportsController::exportRoomsExcel');
         $routes->get('reports/export/rooms/pdf', 'ReportsController::exportRoomsPdf');
-        $routes->get('reports/export/cars/excel', 'ReportsController::exportCarsExcel');
         $routes->get('reports/export/cars/pdf', 'ReportsController::exportCarsPdf');
 
     });
@@ -122,7 +120,8 @@ $routes->group('driver', ['filter' => 'auth'], function($routes) {
         $routes->get('dashboard', 'DriverDashboardController::index');
         $routes->get('jobs/(:num)', 'DriverDashboardController::show/$1');
         $routes->post('jobs/(:num)/status', 'DriverDashboardController::updateStatus/$1');
-        $routes->get('driver/profile', 'DriverProfileController::index');
+        $routes->get('driver/profile', 'DriverDashboardController::profile');
         $routes->post('driver/profile/photo', 'DriverProfileController::updatePhoto');
+        $routes->get('profile', 'DriverDashboardController::profile');
     });
 });

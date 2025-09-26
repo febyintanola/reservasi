@@ -408,4 +408,32 @@ class DriverDashboardController extends BaseController
 		} catch (\Throwable $e) {}
 		return $runningCars + $runningRooms;
 	}
+
+	/**
+	 * Menampilkan profil driver.
+	 */
+	public function profile()
+	{
+		$driverUserId = session('user_id');
+		if (!$driverUserId) {
+			return redirect()->to('/login');
+		}
+
+		// Ambil data profil driver
+		$profile = $this->profileModel->where('user_id', $driverUserId)->first();
+
+        // Ambil data user (email, id, dll)
+        $user = null;
+        try {
+            $userModel = model('App\\Models\\UserModel');
+            $user = $userModel->find($driverUserId);
+        } catch (\Throwable $e) {
+            $user = null;
+        }
+
+		return view('driver/profile', [
+			'profile' => $profile,
+            'user' => $user,
+		]);
+	}
 }
