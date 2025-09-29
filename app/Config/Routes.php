@@ -50,8 +50,10 @@ $routes->group('admin', ['filter' => 'auth'], function($routes) {
 
     // Semua ini hanya untuk role 'admin'
     $routes->group('', ['filter' => 'role:admin'], static function($routes) {
-        $routes->get('/', 'AdminDashboardController::index');
-        $routes->get('dashboard', 'AdminDashboardController::index');
+    $routes->get('/', 'AdminDashboardController::index');
+    $routes->get('dashboard', 'AdminDashboardController::index');
+    // Endpoint untuk polling dashboard (mengembalikan JSON)
+    $routes->get('dashboard/data', 'AdminDashboardController::data');
         $routes->get('booking/detail/(:num)', 'AdminDashboardController::detail/$1');
         $routes->post('booking/approve/(:num)', 'AdminDashboardController::approve/$1');
         $routes->post('booking/reject/(:num)', 'AdminDashboardController::reject/$1');

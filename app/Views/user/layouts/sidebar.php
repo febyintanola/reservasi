@@ -1,6 +1,6 @@
 <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 <?php
-$fotoUrl = 'https://via.placeholder.com/40';
+$fotoUrl = base_url('public/css/default-avatar.png');
 $uid = session('user_id');
 if ($uid) {
   try {

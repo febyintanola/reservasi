@@ -51,15 +51,17 @@
   const inputFoto = document.getElementById('foto');
   const previewFoto = document.getElementById('previewFoto');
 
-  inputFoto.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function (evt) {
-      previewFoto.src = evt.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
+  if (inputFoto) {
+    inputFoto.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (evt) {
+        if (previewFoto) previewFoto.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
 </script>
 
 

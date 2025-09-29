@@ -149,6 +149,126 @@ class AdminDashboardController extends BaseController {
             'todayRoomSchedule' => $todayRoomSchedule,
             'todayCarSchedule'  => $todayCarSchedule,
         ]);
+    }
+
+    // Endpoint JSON untuk polling dashboard
+    public function data()
+    {
+        $bookingRuangModel = new BookingRuangModel();
+        $bookingMobilModel = new CarModel();
+        $roomModel         = new RoomModel();
+
+        $today = date('Y-m-d');
+
+        // Ambil reservasi ruang
+        $ruang = $bookingRuangModel
+            ->select('room_bookings.id, room_bookings.acara, room_bookings.tanggal, room_bookings.status, user_profile.nama as pemesan_nama, user_profile.divisi as pemesan_divisi')
+            ->join('user_profile', 'user_profile.user_id = room_bookings.user_id', 'left')
+            ->findAll();
+        foreach ($ruang as &$item) {
+            $item['tipe'] = 'Reservasi Ruangan';
+        }
+
+        // Ambil reservasi mobil
+        $mobil = $bookingMobilModel
+            ->select('car_bookings.id, car_bookings.tujuan, car_bookings.tanggal_pergi, car_bookings.tanggal_pulang, car_bookings.status, user_profile.nama as pemesan_nama, user_profile.divisi as pemesan_divisi')
+            ->join('user_profile', 'user_profile.user_id = car_bookings.user_id', 'left')
+            ->findAll();
+        foreach ($mobil as &$item) {
+            $item['tipe'] = 'Reservasi Mobil';
+            $item['acara'] = $item['tujuan'] ?? null;
+            $item['tanggal'] = $item['tanggal_pergi'] ?? null;
+            unset($item['tujuan'], $item['tanggal_pergi']);
+        }
+
+        $bookings = array_merge($ruang, $mobil);
+        usort($bookings, function ($a, $b) {
+            return strtotime($b['tanggal'] ?? '') <=> strtotime($a['tanggal'] ?? '');
+        });
+
+        $totalBerjalan = 0;
+        $reservasiHariIni = 0;
+        foreach ($bookings as $booking) {
+            $status = strtolower($booking['status'] ?? '');
+            if ($status === 'pending') $totalBerjalan++;
+            if (!empty($booking['tanggal']) && substr($booking['tanggal'], 0, 10) === $today) $reservasiHariIni++;
+        }
+
+        $totalRooms = (int) $roomModel->countAllResults();
+        $ruangDipakaiHariIni = 0;
+        if ($totalRooms > 0) {
+            $roomsBookedToday = $bookingRuangModel
+                ->select('room_id, status')
+                ->where('tanggal', $today)
+                ->whereIn('status', ['pending', 'accepted'])
+                ->findAll();
+            $uniqueRoomIds = [];
+            foreach ($roomsBookedToday as $rb) {
+                if (!empty($rb['room_id'])) $uniqueRoomIds[$rb['room_id']] = true;
+            }
+            $ruangDipakaiHariIni = count($uniqueRoomIds);
+        }
+        $utilisasiRuangPersen = $totalRooms > 0 ? round(($ruangDipakaiHariIni / $totalRooms) * 100) : 0;
+
+        // Jadwal hari ini (ringkasan)
+        $todayRoomSchedule = $bookingRuangModel
+            ->select('room_bookings.id, room_bookings.acara, room_bookings.tanggal, room_bookings.jam_mulai, room_bookings.jam_selesai, rooms.nama_ruangan, user_profile.nama as pemesan_nama, user_profile.divisi as pemesan_divisi, room_bookings.status')
+            ->join('rooms', 'rooms.id = room_bookings.room_id', 'left')
+            ->join('user_profile', 'user_profile.user_id = room_bookings.user_id', 'left')
+            ->where('room_bookings.tanggal', $today)
+            ->orderBy('room_bookings.jam_mulai', 'ASC')
+            ->findAll();
+
+        $assignmentModel = new DriverAssignmentModel();
+        $driverModel     = new DriverModel();
+        $todayCarSchedule = $bookingMobilModel
+            ->select('car_bookings.id, car_bookings.tujuan, car_bookings.tanggal_pergi, car_bookings.tanggal_pulang, car_bookings.status, user_profile.nama as pemesan_nama, user_profile.divisi as pemesan_divisi')
+            ->join('user_profile', 'user_profile.user_id = car_bookings.user_id', 'left')
+            ->groupStart()
+                ->where('car_bookings.tanggal_pergi <=', $today)
+                ->where('car_bookings.tanggal_pulang >=', $today)
+            ->groupEnd()
+            ->orderBy('car_bookings.tanggal_pergi', 'ASC')
+            ->findAll();
+
+        foreach ($todayCarSchedule as &$c) {
+            $assign = $assignmentModel->where('car_booking_id', $c['id'])->first();
+            $c['driver_nama'] = null;
+            $c['driver_foto'] = null;
+            $c['mobil_plat']  = $assign['mobil_plat'] ?? null;
+            $c['mobil_jenis'] = $assign['mobil_jenis'] ?? null;
+            if ($assign && !empty($assign['driver_id'])) {
+                $driver = $driverModel->find((int)$assign['driver_id']);
+                if (!$driver) {
+                    $byUser = $driverModel->where('user_id', (int)$assign['driver_id'])->first();
+                    $driver = $byUser ?: null;
+                }
+                if ($driver) {
+                    if (is_array($driver)) {
+                        $c['driver_nama'] = $driver['nama'] ?? null;
+                        $c['driver_foto'] = $driver['foto_url'] ?? null;
+                    } else {
+                        $c['driver_nama'] = $driver->nama ?? null;
+                        $c['driver_foto'] = $driver->foto_url ?? null;
+                    }
+                }
+            }
+        }
+
+        $data = [
+            'bookings' => $bookings,
+            'totalRuang' => count($ruang),
+            'totalMobil' => count($mobil),
+            'totalBerjalan' => $totalBerjalan,
+            'reservasiHariIni' => $reservasiHariIni,
+            'totalRooms' => $totalRooms,
+            'ruangDipakaiHariIni' => $ruangDipakaiHariIni,
+            'utilisasiRuangPersen' => $utilisasiRuangPersen,
+            'todayRoomSchedule' => $todayRoomSchedule,
+            'todayCarSchedule' => $todayCarSchedule,
+        ];
+
+        return $this->response->setJSON($data);
         
     }
 
@@ -224,6 +344,14 @@ class AdminDashboardController extends BaseController {
                 ->with('error', 'Booking tidak ditemukan');
         }
         $model->update($id, ['status' => 'accepted']);
+        // Kirim notifikasi email ke pemesan bahwa booking telah disetujui
+        try {
+            $notif = new \App\Libraries\NotificationService();
+            $notif->notifyBookingApproved($booking, 'ruang');
+        } catch (\Throwable $e) {
+            // jangan ganggu flow utama jika notifikasi gagal
+            log_message('error', 'Failed to send approval notification for room booking: ' . $e->getMessage());
+        }
         return redirect()->to(base_url('admin/booking/detail/' . $id))
             ->with('message', 'Booking telah disetujui');
     }
@@ -254,6 +382,14 @@ class AdminDashboardController extends BaseController {
                 ->with('error', 'Booking mobil tidak ditemukan');
         }
         $carModel->update($id, ['status' => 'accepted']);
+
+        // Kirim notifikasi email ke pemesan bahwa booking mobil telah disetujui
+        try {
+            $notif = new \App\Libraries\NotificationService();
+            $notif->notifyBookingApproved($booking, 'mobil');
+        } catch (\Throwable $e) {
+            log_message('error', 'Failed to send approval notification for car booking: ' . $e->getMessage());
+        }
 
         // Sync status driver -> On Duty ketika booking diterima (jika ada assignment)
         try {

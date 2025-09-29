@@ -76,10 +76,10 @@ if ($uid) {
       const shouldShow = <?= $notif ? 'true' : 'false' ?>;
 
       if (shouldShow) {
-        // Auto-hide setelah 4 detik
-        const hide = () => toast.classList.add('opacity-0', 'pointer-events-none');
-        setTimeout(hide, 4000);
-        closeBtn?.addEventListener('click', hide);
+  // Auto-hide setelah 4 detik
+  const hide = () => toast.classList.add('opacity-0', 'pointer-events-none');
+  setTimeout(hide, 4000);
+  if (closeBtn) closeBtn.addEventListener('click', hide);
       }
     })();
   </script>
@@ -90,7 +90,7 @@ if ($uid) {
     const sidebar = document.getElementById('sidebar');
 
     toggleBtn.addEventListener('click', () => {
-      sidebar.classList.toggle('-ml-64');
+  if (sidebar) sidebar.classList.toggle('-ml-64');
     });
   </script>
 

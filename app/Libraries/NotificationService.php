@@ -213,6 +213,7 @@ class NotificationService
             'display_name',
             'driver_name',
             'username',
+            'nama'
         ];
 
         foreach ($candidates as $prop) {
@@ -238,5 +239,107 @@ class NotificationService
 
         // Last resort fallback text
         return 'Rekan Pengemudi';
+    }
+
+    /**
+     * Kirim notifikasi ke pemesan ketika booking disetujui.
+     * $booking: array or object containing at least 'id', 'user_id', 'acara'/'tujuan', 'tanggal'
+     * $type: 'ruang' or 'mobil' - akan membentuk subject dan link
+     */
+    public function notifyBookingApproved($booking, string $type = 'ruang'): void
+    {
+        // Normalize booking to object for property access
+        if (is_array($booking)) {
+            $booking = (object)$booking;
+        }
+
+        // Resolve recipient email via user_id -> UserModel
+        $email = null;
+        $userId = $booking->user_id ?? null;
+        if ($userId) {
+            try {
+                $user = (new \App\Models\UserModel())->find($userId);
+                if ($user && !empty($user['email']) && filter_var($user['email'], FILTER_VALIDATE_EMAIL)) {
+                    $email = $user['email'];
+                }
+            } catch (\Throwable $e) {
+                log_message('error', 'Resolve booking user email failed: ' . $e->getMessage());
+            }
+        }
+
+        if (!$email) {
+            log_message('info', 'No email found for booking id ' . ($booking->id ?? 'unknown') . '. Notification skipped.');
+            return;
+        }
+
+        $displayName = $booking->pemesan_nama ?? ($user['name'] ?? ($user['fullname'] ?? 'Pengguna'));
+        $title = ($type === 'mobil') ? 'Booking Mobil Disetujui' : 'Booking Ruang Disetujui';
+        $subject = $title . ' - #' . ($booking->id ?? '-');
+
+        $acara = $booking->acara ?? $booking->tujuan ?? '-';
+        $tanggal = $booking->tanggal ?? ($booking->tanggal_pergi ?? '-') ;
+
+        // Jika booking adalah ruang, coba ambil nama ruangan dan jam mulai/selesai
+        $lokasi = null;
+        $waktuText = null;
+        if ($type === 'ruang') {
+            try {
+                if (!empty($booking->room_id)) {
+                    $room = (new \App\Models\RoomModel())->find($booking->room_id);
+                    if ($room) {
+                        if (is_array($room)) {
+                            $lokasi = $room['nama_ruangan'] ?? ($room['nama'] ?? null);
+                        } else {
+                            $lokasi = $room->nama_ruangan ?? ($room->nama ?? null);
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                log_message('error', 'Resolve room name failed: ' . $e->getMessage());
+            }
+            $jamMulai = $booking->jam_mulai ?? null;
+            $jamSelesai = $booking->jam_selesai ?? null;
+            if ($jamMulai || $jamSelesai) {
+                $jamMulaiFmt = $jamMulai ? date('H:i', strtotime($jamMulai)) : '';
+                $jamSelesaiFmt = $jamSelesai ? date('H:i', strtotime($jamSelesai)) : '';
+                if ($jamMulaiFmt && $jamSelesaiFmt) {
+                    $waktuText = $jamMulaiFmt . ' - ' . $jamSelesaiFmt;
+                } elseif ($jamMulaiFmt) {
+                    $waktuText = 'Mulai: ' . $jamMulaiFmt;
+                } elseif ($jamSelesaiFmt) {
+                    $waktuText = 'Selesai: ' . $jamSelesaiFmt;
+                }
+            }
+        }
+
+        $html = '<!doctype html><html><head><meta charset="utf-8"><title>' . htmlspecialchars($subject) . '</title></head><body style="font-family: Arial, sans-serif; color: #222;">'
+            . '<p>Yth. ' . htmlspecialchars((string)$displayName) . ',</p>'
+            . '<p>Permintaan reservasi Anda telah disetujui oleh tim administrasi. Berikut ringkasan:</p>'
+            . '<ul>'
+            . '<li><strong>Booking ID:</strong> ' . htmlspecialchars((string)($booking->id ?? '-')) . '</li>'
+            . '<li><strong>Acara / Tujuan:</strong> ' . htmlspecialchars((string)$acara) . '</li>'
+            . '<li><strong>Tanggal:</strong> ' . htmlspecialchars((string)$tanggal) . '</li>';
+
+        if ($type === 'ruang') {
+            $html .= '<li><strong>Lokasi:</strong> ' . htmlspecialchars((string)($lokasi ?? '-')) . '</li>';
+            if ($waktuText) {
+                $html .= '<li><strong>Waktu:</strong> ' . htmlspecialchars((string)$waktuText) . '</li>';
+            }
+        }
+
+        // Link ke detail booking jika memungkinkan
+        $base = function_exists('base_url') ? base_url() : (config('App')->baseURL ?? '');
+        $link = null;
+        if ($type === 'mobil') {
+            $link = $base . '/admin/car/detailMobil/' . ($booking->id ?? '');
+        } else {
+            $link = $base . '/admin/booking/detail/' . ($booking->id ?? '');
+        }
+        $html .= '<p>Anda dapat melihat detail di <a href="' . htmlspecialchars($link) . '">halaman booking</a>.</p>';
+
+        $html .= '<p>Terima kasih,<br>' . htmlspecialchars($this->fromName) . '</p>' . '</body></html>';
+
+        $this->sendEmailMessage($email, $subject, $html);
+        $this->logNotification($userId ? (int)$userId : null, $subject, strip_tags(str_replace('<br>', "\n", $html)), $link);
     }
 }

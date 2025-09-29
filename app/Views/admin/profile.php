@@ -19,7 +19,7 @@
 
         <div class="mb-2 relative w-24 h-24 mx-auto">
             <!-- Foto Profil -->
-            <img id="previewFoto" src="<?= esc($profile['foto_url'] ?? 'https://via.placeholder.com/96') ?>"
+            <img id="previewFoto" src="<?= esc($profile['foto_url'] ?? 'public/css/default-avatar.png') ?>"
              alt="User profile picture"
              class="w-24 h-24 rounded-full border border-gray-300 object-cover"/>
 
