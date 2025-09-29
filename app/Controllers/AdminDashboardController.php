@@ -54,6 +54,7 @@ class AdminDashboardController extends BaseController {
         });
 
         // Hitung total reservasi dengan status 'pending' (menunggu persetujuan)
+        // Statistik dihitung dari seluruh dataset, tetapi view tabel akan dibatasi ke $maxDisplay
         $totalBerjalan = 0;
         $reservasiHariIni = 0;
         $todayBookings = [];
@@ -67,6 +68,10 @@ class AdminDashboardController extends BaseController {
                 $todayBookings[] = $booking;
             }
         }
+
+        // Batasi jumlah baris yang ditampilkan di dashboard untuk performa
+        $maxDisplay = 20;
+        $bookingsForView = array_slice($bookings, 0, $maxDisplay);
 
         // Utilisasi ruang: berapa ruang terpakai hari ini (pending/accepted) dibanding total ruang
         $totalRooms = (int) $roomModel->countAllResults();
@@ -137,7 +142,7 @@ class AdminDashboardController extends BaseController {
         }
 
         return view('admin/dashboard', [
-            'bookings'     => $bookings,
+            'bookings'     => $bookingsForView,
             'totalRuang'   => count($ruang),
             'totalMobil'   => count($mobil),
             'totalBerjalan'=> $totalBerjalan,
@@ -154,6 +159,9 @@ class AdminDashboardController extends BaseController {
     // Endpoint JSON untuk polling dashboard
     public function data()
     {
+        // Optional per-page parameter (for future pagination). Default 20 for dashboard.
+        $perPage = (int) ($this->request->getGet('perPage') ?? 20);
+        if ($perPage <= 0) $perPage = 20;
         $bookingRuangModel = new BookingRuangModel();
         $bookingMobilModel = new CarModel();
         $roomModel         = new RoomModel();
@@ -193,6 +201,9 @@ class AdminDashboardController extends BaseController {
             if ($status === 'pending') $totalBerjalan++;
             if (!empty($booking['tanggal']) && substr($booking['tanggal'], 0, 10) === $today) $reservasiHariIni++;
         }
+
+        // Slice the bookings returned to the dashboard (default perPage)
+        $bookingsForResponse = array_slice($bookings, 0, $perPage);
 
         $totalRooms = (int) $roomModel->countAllResults();
         $ruangDipakaiHariIni = 0;
@@ -256,7 +267,7 @@ class AdminDashboardController extends BaseController {
         }
 
         $data = [
-            'bookings' => $bookings,
+            'bookings' => $bookingsForResponse,
             'totalRuang' => count($ruang),
             'totalMobil' => count($mobil),
             'totalBerjalan' => $totalBerjalan,

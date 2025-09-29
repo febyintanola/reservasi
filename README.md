@@ -38,89 +38,166 @@ Dibangun dengan CodeIgniter 4 (PHP 8.1+). Mendukung role Admin, User, dan Driver
 - `room_bookings`, `rooms`
 - `car_bookings`
 - `drivers`, `driver_assignments`
-- `password_resets` (untuk fitur lupa password)
-- `notifications` (jika mencatat notifikasi)
+# Aplikasi Reservasi (Ruang Rapat & Kendaraan)
 
-4) Jalankan server pengembangan:
+Ini adalah aplikasi internal sederhana untuk mengelola reservasi ruang rapat dan pemesanan kendaraan dinas.
+Dibangun dengan CodeIgniter 4 dan kompatibel dengan PHP 8.1+. Aplikasi menyediakan peran (roles) utama: admin, user, dan driver.
+
+## Ringkasan Fungsionalitas
+
+- Reservasi ruang rapat: cek ketersediaan per jam, formulir booking, dan riwayat pengguna.
+- Pemesanan kendaraan dinas: pengajuan pemesanan, detail booking, dan riwayat.
+- Penugasan driver dan kendaraan oleh admin. Status driver disinkronkan otomatis berdasarkan tugas.
+- Dashboard Admin: ringkasan booking dan aksi administratif (assign, edit, laporan).
+- Dashboard Driver: daftar tugas hari ini, detail tugas, dan update status (accepted, on-going, done).
+- Export laporan ke Excel/PDF (opsional, butuh dependency tambahan).
+- Notifikasi email sederhana (opsional), jika konfigurasi email tersedia.
+
+## Persyaratan
+
+- PHP 8.1 atau lebih baru
+- Ekstensi PHP: intl, mbstring, json (default), curl (opsional)
+- Database: MySQL / MariaDB
+- Composer (dependency manager PHP)
+
+Catatan: saya menulis README ini berdasarkan struktur proyek saat ini. Jika Anda mengubah major framework/versi, sesuaikan requirements.
+
+## Instalasi & Konfigurasi (Windows, PowerShell)
+
+1. Clone repository dan masuk ke folder proyek:
+
+```powershell
+git clone <repo-url>
+cd reservasi
+```
+
+2. Install dependency Composer:
+
+```powershell
+composer install
+```
+
+3. Salin file lingkungan dan atur konfigurasi dasar:
+
+```powershell
+cp env .env
+```
+
+Buka `.env` dan perbarui nilai penting:
+
+- app.baseURL (contoh: `http://localhost:8080/`)
+- database.default.hostname, database.default.database, database.default.username, database.default.password
+- email.* jika ingin mengaktifkan notifikasi
+
+Jika Anda menggunakan PowerShell pada Windows dan `cp` tidak tersedia, gunakan:
+
+```powershell
+Copy-Item env .env
+```
+
+4. Migrasi basis data (jika disediakan migration):
+
+```powershell
+php spark migrate
+```
+
+Jika tidak ada migration, pastikan tabel berikut ada sesuai skema aplikasi:
+
+- users, user_profile
+- rooms, room_bookings
+- car_bookings
+- drivers, driver_assignments
+- password_resets (opsional)
+- notifications (opsional)
+
+5. Jalankan server pengembangan:
 
 ```powershell
 php spark serve
 ```
 
-Lalu buka di browser: http://localhost:8080
+Buka browser ke: http://localhost:8080
 
-## Akun & Role
+## Akun & Peran (Roles)
 
-- User umum mendaftar via menu Register
-- Role otomatis berdasarkan divisi (contoh di `AuthController::storeRegister()`):
-  - `umum` => admin
-  - `driver` => driver
-  - selain itu => user
-- Admin bisa mengakses: `/admin`
-- Driver mengakses: `/driver/dashboard`
+- Pendaftaran: pengguna baru dapat mendaftar melalui form Register (jika route aktif).
+- Penentuan role pada registrasi dibuat sederhana di `AuthController::storeRegister()` (cek kode untuk logika divisi => role mapping).
+- Akses khusus:
+  - Admin: akses area `/admin` dan laporan
+  - Driver: akses `/driver/dashboard`
 
-## Rute Penting (ringkas)
+## Rute Penting
 
-- Public
-  - `GET /login`, `POST /login`
-  - `GET /register`, `POST /register`
-  - Lupa/Reset password: `GET/POST /forgot-password`, `GET /reset-password/{token}`, `POST /reset-password`
+Untuk daftar lengkap rute, cek file `app/Config/Routes.php`. Berikut ringkasan rute yang sering dipakai:
 
-- User (login & role:user)
-  - Home: `GET /` atau `/home`
-  - Ruang: `GET /ruang`, `POST /ruang/check`, `GET /ruang/booking-form`, `POST /ruang/save-booking`
-  - Mobil: `GET /car/form`, `POST /car/save`
-  - Profil: `GET /user/profile`, `POST /profile/update`
-  - Riwayat: `GET /history`
+- Public: `/login`, `/register`, `/forgot-password`, `/reset-password/{token}`
+- User: `/`, `/home`, `/ruang` (check/booking), `/car/form`, `/user/profile`, `/history`
+- Admin: `/admin`, `/admin/car`, `/admin/ruang`, `/admin/reports` (export)
+- Driver: `/driver/dashboard`, `/driver/jobs/{bookingId}`
 
-- Admin (login & role:admin)
-  - Dashboard: `GET /admin`
-  - Car bookings Admin: `GET /admin/car`, `GET /admin/car/detail/{id}`, CRUD dasar
-  - Assign Driver/Mobil: `GET /admin/car/assign/{bookingId}`, `POST /admin/car/assign_save/{bookingId}`
-  - Ruang Admin: `GET /admin/ruang`, `GET /admin/ruang/create`, `POST /admin/ruang/store`, edit/update
-  - Laporan: `GET /admin/reports` + export Excel/PDF
+Gunakan POST untuk aksi seperti save, assign, dan update status.
 
-- Driver (login & role:driver)
-  - Dashboard: `GET /driver/dashboard`
-  - Detail tugas: `GET /driver/jobs/{bookingId}`
-  - Update status tugas: `POST /driver/jobs/{bookingId}/status`
+## Export Laporan (opsional)
 
-Detail lengkap ada di `app/Config/Routes.php`.
+Untuk fitur export Excel/PDF gunakan paket:
 
-## Export Excel/PDF (opsional)
+- Excel: phpoffice/phpspreadsheet
+- PDF: dompdf/dompdf
 
-Fitur export di `app/Libraries/ExportService.php` memerlukan paket berikut:
-
-- Excel: `phpoffice/phpspreadsheet`
-- PDF: `dompdf/dompdf`
-
-Install via Composer:
+Install via Composer bila diperlukan:
 
 ```powershell
 composer require phpoffice/phpspreadsheet:^1.29 ; composer require dompdf/dompdf:^2.0
 ```
 
-## Struktur Direktori (ringkas)
+Fungsi export ada di `app/Libraries/ExportService.php`.
 
-- `app/Controllers` – logika HTTP (Admin, User, Driver, Reports, dll.)
-- `app/Models` – akses database (CarModel, BookingRuangModel, dsb.)
-- `app/Libraries` – layanan (ExportService, NotificationService)
-- `app/Filters` – filter auth/role
+## Menjalankan Unit Tests (PHPUnit) — Windows
+
+Project sudah dilengkapi skeleton `phpunit.xml.dist`. Untuk menjalankan unit test di Windows (PowerShell):
+
+```powershell
+vendor\bin\phpunit -c phpunit.xml.dist
+```
+
+Jika Anda ingin menjalankan satu file test:
+
+```powershell
+vendor\bin\phpunit tests\unit\SomeTest.php -c phpunit.xml.dist
+```
+
+Coverage (opsional) membutuhkan Xdebug atau PCOV. Contoh perintah (dengan Xdebug aktif):
+
+```powershell
+vendor\bin\phpunit --coverage-html writable\coverage -c phpunit.xml.dist
+```
+
+Catatan: Pastikan group `tests` environment (mis. `.env.testing`) diatur jika Anda memerlukan konfigurasi database khusus untuk test.
+
+## Debugging & Troubleshooting
+
+- Error koneksi DB: periksa konfigurasi di `.env` dan `app/Config/Database.php`.
+- Email tidak terkirim: cek konfigurasi SMTP di `.env` atau `app/Config/Email.php`.
+- Permasalahan akses file/uploads: periksa permission pada folder `writable/`.
+
+## Struktur Direktori (singkat)
+
+- `app/Controllers` – controller aplikasi (Admin, Auth, CarController, RoomController, dsb.)
+- `app/Models` – model database (CarModel, BookingRuangModel, dsb.)
+- `app/Libraries` – layanan tambahan (ExportService, NotificationService)
 - `app/Views` – tampilan
-- `public/` – web root (index.php, assets)
+- `public/` – web root untuk assets dan `index.php`
 
-## Catatan Implementasi
+## Catatan Pengembang
 
-- Beberapa tempat menggunakan normalisasi untuk hasil query (array vs object) agar aman di semua environment.
-- Status driver disinkronkan ketika booking mobil berubah status (accepted/ongoing => On Duty, done/rejected => Available jika tidak ada tugas lain yang berjalan).
-- Notifikasi email driver (opsional) lewat `NotificationService` – pastikan konfigurasi email di `.env` atau di `Config\\Email.php`.
-- Di routes ada entri `RuangRapatController` (opsional). Jika controller tersebut belum tersedia, nonaktifkan rute terkait atau tambahkan controllernya.
+- Beberapa bagian menggunakan normalisasi hasil query (array vs object) agar kompatibel di beberapa environment.
+- Status driver disinkronkan saat booking berubah status. Lihat implementasi di model `DriverAssignmentModel` atau lokasi update status booking.
+- Jika Anda butuh fitur export/notification, instal dependency composer yang diperlukan.
 
-## Pengembangan
+## Kontribusi
 
-- Jalankan server dev: `php spark serve`
-- Unit test (jika tersedia): `composer test`
+- Fork, buat branch baru, lalu ajukan Pull Request. Ikuti standar coding yang ada di proyek.
 
 ## Lisensi
 
-MIT (mengikuti lisensi CodeIgniter Starter). Lihat file LICENSE.
+MIT

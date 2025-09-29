@@ -129,6 +129,12 @@
 
     <!-- Tabel Reservasi Terbaru -->
     <section class="overflow-x-auto">
+      <div class="flex items-center justify-between mb-4">
+        <div></div>
+        <div>
+          <a href="<?= base_url('admin/reports') ?>" class="btn-link">Lihat Semua (Laporan)</a>
+        </div>
+      </div>
       <table class="min-w-full card overflow-hidden">
         <thead class="bg-slate-50 text-xs text-slate-600 uppercase">
           <tr>
