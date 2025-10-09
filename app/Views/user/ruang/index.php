@@ -32,7 +32,7 @@
           Slot Terdekat
         </button>
       </div>
-      <div id="slotTerdekatInfo" class="text-sm text-blue-700 mt-2 text-center"></div>
+  <div id="slotTerdekatInfo" class="text-sm text-primary-brand mt-2 text-center"></div>
     </form>
     
   <section id="roomList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -95,11 +95,11 @@
       const jamSelesai = jamSelesaiInput.value;
       const infoEl = document.getElementById('slotTerdekatInfo');
 
-      infoEl.classList.remove('text-red-700');
-      infoEl.classList.add('text-blue-700');
+  infoEl.classList.remove('text-red-700');
+  infoEl.classList.add('text-primary-brand');
 
       if (!tanggal || !jamMulai || !jamSelesai) {
-        infoEl.classList.remove('text-blue-700');
+  infoEl.classList.remove('text-primary-brand');
         infoEl.classList.add('text-red-700');
         infoEl.textContent = 'Isi tanggal, jam mulai, dan jam selesai dulu.';
         return;
@@ -115,16 +115,16 @@
           if (Array.isArray(res.slots) && res.slots.length) {
             const list = res.slots.map(s => `• ${s.room_name}: ${s.start} - ${s.end}`).join('<br>');
             slotTerdekatInfo.classList.remove('text-red-700');
-            slotTerdekatInfo.classList.add('text-blue-700');
+            slotTerdekatInfo.classList.add('text-primary-brand');
             slotTerdekatInfo.innerHTML = `<strong>Rekomendasi slot:</strong><br>${list}`;
           } else {
-            slotTerdekatInfo.classList.remove('text-blue-700');
+            slotTerdekatInfo.classList.remove('text-primary-brand');
             slotTerdekatInfo.classList.add('text-red-700');
             slotTerdekatInfo.textContent = res.message || 'Tidak ditemukan slot alternatif.';
           }
         })
         .catch(() => {
-          slotTerdekatInfo.classList.remove('text-blue-700');
+          slotTerdekatInfo.classList.remove('text-primary-brand');
           slotTerdekatInfo.classList.add('text-red-700');
           slotTerdekatInfo.textContent = 'Gagal mengambil data. Coba lagi.';
         });

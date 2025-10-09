@@ -4,12 +4,12 @@
 <main class="flex-grow flex flex-col items-center px-4">
 
   <?php if (session()->getFlashdata('success')): ?>
-    <div class="mt-6 w-full max-w-sm rounded-md bg-green-50 border border-green-200 text-green-800 px-4 py-2 text-sm">
+    <div class="mt-6 w-full max-w-sm alert-success text-sm">
       <?= esc(session()->getFlashdata('success')) ?>
     </div>
   <?php endif; ?>
   <?php if (session()->getFlashdata('error')): ?>
-    <div class="mt-6 w-full max-w-sm rounded-md bg-red-50 border border-red-200 text-red-800 px-4 py-2 text-sm">
+    <div class="mt-6 w-full max-w-sm alert-danger text-sm">
       <?= nl2br(esc(session()->getFlashdata('error'))) ?>
     </div>
   <?php endif; ?>
@@ -75,8 +75,8 @@
     </div>
 
     <div class="flex justify-center items-center gap-6 mt-6">
-      <a href="/home" class="text-black text-base">Batal</a>
-      <button type="submit" class="bg-black text-white text-base rounded-md px-6 py-2">Simpan</button>
+      <a href="/home" class="text-muted text-base link-primary" style="text-decoration:none;">Batal</a>
+      <button type="submit" class="btn-primary px-6 py-2">Simpan</button>
     </div>
   </form>
 </main>

@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Login - RuMa</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Custom favicon/logo -->
+  <link rel="icon" type="image/png" href="<?= base_url('uploads/logo.png') ?>" />
+  <link rel="apple-touch-icon" href="<?= base_url('uploads/logo.png') ?>" />
+  <link rel="shortcut icon" href="<?= base_url('uploads/logo.png') ?>" />
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Quicksand&display=swap');
     body {
@@ -15,7 +19,10 @@
 <body class="bg-white min-h-screen flex items-center justify-center px-4">
   <div class="w-full max-w-sm">
     <div class="text-center mb-6">
-      <h1 class="text-4xl font-semibold text-gray-800 mb-2">RuMa</h1>
+      <div class="flex items-center justify-center gap-2 mb-2">
+        <img src="<?= base_url('uploads/logo.png') ?>" alt="Logo RuMa" class="h-10 w-10 object-contain" />
+        <h1 class="text-3xl font-semibold text-gray-800">RuMa</h1>
+      </div>
       <p class="text-gray-500 text-sm">Sistem Reservasi Ruang Rapat & Mobil</p>
     </div>
 

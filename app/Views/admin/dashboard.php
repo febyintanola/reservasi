@@ -12,7 +12,7 @@
   <!-- Ringkasan (KPI) -->
    <section class="grid sm:grid-cols-5 gap-6 mb-10">
       <div class="card p-6 flex items-center gap-4">
-        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+  <div class="w-12 h-12 rounded-full icon-circle-primary">
           <i class="fas fa-list-check"></i>
         </div>
         <div>
@@ -21,7 +21,7 @@
         </div>
       </div>
       <div class="card p-6 flex items-center gap-4">
-        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+  <div class="w-12 h-12 rounded-full icon-circle-primary">
           <i class="fas fa-calendar-day"></i>
         </div>
         <div>
@@ -30,26 +30,8 @@
         </div>
       </div>
       <div class="card p-6 flex items-center gap-4">
-        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+  <div class="w-12 h-12 rounded-full icon-circle-primary">
           <i class="fas fa-door-open"></i>
-        </div>
-        <div>
-          <p class="text-slate-500 text-sm">Total Ruangan Dipesan</p>
-          <p class="text-3xl font-bold text-slate-800"><?= esc($totalRuang) ?></p>
-        </div>
-      </div>
-      <div class="card p-6 flex items-center gap-4">
-        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-          <i class="fas fa-car"></i>
-        </div>
-        <div>
-          <p class="text-slate-500 text-sm">Total Mobil Dipesan</p>
-          <p class="text-3xl font-bold text-slate-800"><?= esc($totalMobil ?? 0) ?></p>
-        </div>
-      </div>
-      <div class="card p-6 flex items-center gap-4">
-        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-          <i class="fas fa-gauge-high"></i>
         </div>
         <div>
           <p class="text-slate-500 text-sm">Utilisasi Ruang (hari ini)</p>
@@ -82,7 +64,7 @@
                   </div>
                 </div>
                 <div class="text-xs">
-                  <a href="<?= base_url('admin/booking/detail/' . $r['id']) ?>" class="text-blue-600 hover:underline">Detail</a>
+                  <a href="<?= base_url('admin/booking/detail/' . $r['id']) ?>" class="link-primary">Detail</a>
                 </div>
               </li>
             <?php endforeach; ?>
@@ -115,7 +97,7 @@
                   </div>
                 </div>
                 <div class="text-xs">
-                  <a href="<?= base_url('admin/car/detailMobil/' . $c['id']) ?>" class="text-blue-600 hover:underline">Detail</a>
+                  <a href="<?= base_url('admin/car/detailMobil/' . $c['id']) ?>" class="link-primary">Detail</a>
                 </div>
               </li>
             <?php endforeach; ?>
@@ -252,7 +234,7 @@
                       <div class="text-xs text-slate-500">${r.nama_ruangan ?? '-'} · ${r.jam_mulai ?? '-'} - ${r.jam_selesai ?? '-'}</div>
                       <div class="text-xs text-slate-500">Pemesan: ${r.pemesan_nama ?? '—'} (${r.pemesan_divisi ?? '-'})</div>
                     </div>
-                    <div class="text-xs"><a href="${'<?= base_url('admin/booking/detail/') ?>' + (r.id ?? '')}" class="text-blue-600 hover:underline">Detail</a></div>
+                    <div class="text-xs"><a href="${'<?= base_url('admin/booking/detail/') ?>' + (r.id ?? '')}" class="link-primary">Detail</a></div>
                   </li>`;
               });
               html += '</ul>';
@@ -281,7 +263,7 @@
                         <div class="text-xs text-slate-500">Periode: ${c.tanggal_pergi ?? '-'} s/d ${c.tanggal_pulang ?? '-'}</div>
                       </div>
                     </div>
-                    <div class="text-xs"><a href="${'<?= base_url('admin/car/detailMobil/') ?>' + (c.id ?? '')}" class="text-blue-600 hover:underline">Detail</a></div>
+                    <div class="text-xs"><a href="${'<?= base_url('admin/car/detailMobil/') ?>' + (c.id ?? '')}" class="link-primary">Detail</a></div>
                   </li>`;
               });
               html += '</ul>';

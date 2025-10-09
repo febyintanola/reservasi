@@ -47,12 +47,16 @@
                         <p class="text-gray-600 text-xs">No HP: <?= esc($d['no_hp'] ?? '-') ?></p>
                         <p class="flex items-center gap-1">
                             <?php $st = $d['status'] ?? 'Available'; ?>
-                            <span class="px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wide <?= $st==='Available' ? 'bg-green-200 text-green-800' : 'bg-gray-300 text-gray-700' ?>">
-                                <?= esc($st) ?>
-                            </span>
+                                                        <?php
+                                                            $badge = 'badge-neutral';
+                                                            if (strtolower($st) === 'available') { $badge = 'badge-success'; }
+                                                        ?>
+                                                        <span class="badge text-[10px] uppercase tracking-wide font-semibold <?= $badge ?>">
+                                                                <?= esc($st) ?>
+                                                        </span>
                         </p>
                         <div class="pt-2 flex gap-2">
-                            <a href="<?= base_url('admin/driver/edit/' . $d['id']) ?>" class="inline-block bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 rounded">Edit</a>
+                            <a href="<?= base_url('admin/driver/edit/' . $d['id']) ?>" class="btn-primary btn-sm">Edit</a>
                         </div>
                     </div>
                 </article>

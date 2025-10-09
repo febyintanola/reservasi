@@ -10,6 +10,10 @@
   <link href="<?= base_url('css/theme.css') ?>" rel="stylesheet" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- Custom favicon/logo -->
+  <link rel="icon" type="image/png" href="<?= base_url('uploads/logo.png') ?>" />
+  <link rel="apple-touch-icon" href="<?= base_url('uploads/logo.png') ?>" />
+  <link rel="shortcut icon" href="<?= base_url('uploads/logo.png') ?>" />
 </head>
 <body class="flex bg-white min-h-screen">
 <?php
@@ -35,7 +39,10 @@ if ($uid) {
   <div class="flex-1 flex flex-col">
     <header class="flex items-center justify-between px-4 py-3 border-b border-white bg-white">
       <div class="flex-1 flex justify-center">
-        <div class="text-black text-base font-normal">RuMa</div>
+        <div class="flex items-center gap-2">
+          <img src="<?= base_url('uploads/logo.png') ?>" alt="Logo RuMa" class="h-7 w-7 object-contain" />
+          <div class="text-black text-base font-semibold">RuMa</div>
+        </div>
       </div>
       <a href="<?= base_url('/user/profile') ?>" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center ml-auto overflow-hidden">
         <img src="<?= esc($hdrFotoUrl) ?>" alt="Profil" class="w-8 h-8 object-cover" />

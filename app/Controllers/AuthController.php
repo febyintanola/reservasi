@@ -135,10 +135,57 @@ public function storeRegister()
 
         $user = $userModel->getUserWithProfileById($foundUser['id']);
 
-        log_message('debug', 'Input password: "' . $password . '"');
-        log_message('debug', 'Password DB (hash): "' . $user['password'] . '"');
+        // Remove logging of raw passwords
+        $adEnabled = filter_var(env('AD_ENABLED', false), FILTER_VALIDATE_BOOLEAN);
+        if ($adEnabled) {
+            try {
+                $ad = new \App\Libraries\AdAuthService();
+                $res = $ad->authenticate($email, $password);
+                if ($res['success']) {
+                    $ldapUser = $res['user'];
+                    $existing = $userModel->where('email', $email)->first();
+                    if (!$existing) {
+                        // create minimal local account
+                        $newId = $userModel->insert([
+                            'email' => $email,
+                            'password' => null,
+                        ]);
+                        $profileModel = new UserProfileModel();
+                        $profileModel->insert([
+                            'user_id' => $newId,
+                            'nama'    => $ldapUser ? $ldapUser->getFirstAttribute('cn') : $email,
+                            'divisi'  => 'GM',
+                        ]);
+                        $user = $userModel->find($newId);
+                    } else {
+                        $user = $userModel->getUserWithProfileById($existing['id']);
+                    }
 
-        if (!password_verify($password, $user['password'])) {
+                    session()->set([
+                        'isLoggedIn' => true,
+                        'user_id'    => $user['id'],
+                        'email'      => $user['email'],
+                        'nama'       => $user['profile_nama'] ?? $user['nama'],
+                        'role'       => $user['profile_role'] ?? $user['role'] ?? 'user',
+                        'divisi'     => $user['profile_divisi'] ?? $user['divisi'],
+                    ]);
+
+                    if (($user['profile_role'] ?? $user['role'] ?? '') === 'admin') {
+                        return redirect()->to('/admin');
+                    } elseif (($user['profile_role'] ?? $user['role'] ?? '') === 'driver') {
+                        return redirect()->to('/driver/dashboard');
+                    } else {
+                        return redirect()->to('/home');
+                    }
+                }
+            } catch (\Throwable $e) {
+                log_message('error', 'AD auth error: ' . $e->getMessage());
+                // fallthrough to local auth
+            }
+        }
+
+        // Local DB auth (fallback)
+        if (empty($user['password']) || !password_verify($password, $user['password'] ?? '')) {
             return redirect()->back()->withInput()->with('error', 'Password salah.');
         }
 

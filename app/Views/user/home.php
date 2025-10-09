@@ -16,7 +16,7 @@
         <h3 class="text-lg font-semibold text-slate-800">Reservasi Ruangan</h3>
         <p class="text-slate-500 text-sm">Pilih ruang rapat dan atur waktu yang diinginkan.</p>
       </div>
-      <span class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 inline-flex items-center justify-center">
+  <span class="w-12 h-12 rounded-full icon-circle-primary inline-flex items-center justify-center">
         <i class="fas fa-door-open"></i>
       </span>
     </a>
@@ -26,7 +26,7 @@
         <h3 class="text-lg font-semibold text-slate-800">Reservasi Driver</h3>
         <p class="text-slate-500 text-sm">Ajukan perjalanan dinas dengan driver perusahaan.</p>
       </div>
-      <span class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 inline-flex items-center justify-center">
+  <span class="w-12 h-12 rounded-full icon-circle-primary inline-flex items-center justify-center">
         <i class="fas fa-car"></i>
       </span>
     </a>

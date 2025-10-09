@@ -36,7 +36,10 @@ $isProfile = ($uri === 'admin/profile');
     </button>
 
     <div class="px-3 pt-12"> <!-- pt-14 agar tidak ketumpuk tombol -->
-      <h1 class="text-2xl font-bold text-[#1e90ff] mb-6" x-show="open">RuMa</h1>
+      <h1 class="text-2xl font-bold text-primary-brand mb-6 flex items-center gap-2" x-show="open">
+        <img src="<?= base_url('uploads/logo.png') ?>" alt="Logo RuMa" class="h-8 w-8 object-contain" />
+        <span>RuMa</span>
+      </h1>
       <nav class="space-y-1">
 
         <!-- Home -->
@@ -55,7 +58,7 @@ $isProfile = ($uri === 'admin/profile');
           <i class="fas fa-layer-group text-[16px]"></i>
           <span class="truncate text-sm">Menu</span>
         </span>
-        <i :class="submenuOpen ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="text-xs text-[#1e90ff]"></i>
+  <i :class="submenuOpen ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="text-xs text-primary-brand"></i>
         </button>
 
         <!-- Submenu -->
@@ -86,7 +89,7 @@ $isProfile = ($uri === 'admin/profile');
 
         <!-- Logout -->
   <a href="<?= base_url('/logout') ?>" class="nav-link hover:text-red-600">
-          <i class="fas fa-sign-out-alt text-[16px] text-[#1e90ff]"></i>
+          <i class="fas fa-sign-out-alt text-[16px] text-primary-brand"></i>
           <span x-show="open">Log out</span>
         </a>
       </nav>

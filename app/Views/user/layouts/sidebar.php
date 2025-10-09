@@ -30,9 +30,12 @@ if ($uid) {
       <i class="fas fa-bars" :class="open ? 'text-lg text-black' : 'text-base text-black'"></i>
     </button>
 
-    <div class="px-3 pt-12">
-      <h1 class="text-xl font-bold text-[#1e90ff] mb-4" x-show="open">RuMa</h1>
-      <nav class="space-y-0.5 text-sm">
+    <div class="px-3 pt-12"> <!-- pt-14 agar tidak ketumpuk tombol -->
+      <h1 class="text-2xl font-bold text-primary-brand mb-6 flex items-center gap-2" x-show="open">
+        <img src="<?= base_url('uploads/logo.png') ?>" alt="Logo RuMa" class="h-8 w-8 object-contain" />
+        <span>RuMa</span>
+      </h1>
+      <nav class="space-y-1">
 
         <!-- Home -->
         <a href="<?= base_url('/') ?>" class="nav-link" data-active="<?= in_array(uri_string(), ['', 'home', 'dashboard']) ? 'true' : 'false' ?>">
@@ -50,7 +53,7 @@ if ($uid) {
             <i class="fas fa-layer-group text-[16px]"></i>
             <span class="truncate text-sm">Menu</span>
           </span>
-          <i :class="submenuOpen ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="text-xs text-[#1e90ff]"></i>
+          <i :class="submenuOpen ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="text-xs text-primary-brand"></i>
         </button>
 
         <!-- Submenu -->
@@ -81,7 +84,7 @@ if ($uid) {
 
         <!-- Logout -->
         <a href="<?= base_url('/logout') ?>" class="nav-link hover:text-red-600">
-          <i class="fas fa-sign-out-alt text-[16px] text-[#1e90ff]"></i>
+          <i class="fas fa-sign-out-alt text-[16px] text-primary-brand"></i>
           <span x-show="open" class="text-sm">Log out</span>
         </a>
       </nav>

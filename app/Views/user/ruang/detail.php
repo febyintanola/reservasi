@@ -46,15 +46,19 @@
         <tr>
           <th class="px-4 py-2">Status</th>
           <td class="px-4 py-2">
-            <span class="px-2 py-1 text-xs rounded-full <?= $status === 'accepted' ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800' ?>">
-              <?= esc($status) ?>
-            </span>
+            <?php
+              $badgeClass = 'badge-neutral';
+              if (in_array(strtolower($status), ['accepted','diterima'])) { $badgeClass = 'badge-success'; }
+              elseif (in_array(strtolower($status), ['pending','menunggu','proses'])) { $badgeClass = 'badge-pending'; }
+              elseif (in_array(strtolower($status), ['rejected','ditolak'])) { $badgeClass = 'badge-danger'; }
+            ?>
+            <span class="badge text-xs font-semibold <?= $badgeClass ?>"><?= esc($status) ?></span>
           </td>
         </tr>
       </tbody>
     </table>
 
-    <a href="<?= base_url('history?jenis=ruang') ?>" class="inline-block mt-4 text-blue-600 hover:underline">← Kembali ke History</a>
+  <a href="<?= base_url('history?jenis=ruang') ?>" class="inline-block mt-4 link-primary">← Kembali ke History</a>
   </div>
 </main>
 

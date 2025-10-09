@@ -14,10 +14,6 @@ class NotificationService
     protected string $fromEmail;
     protected string $fromName;
     protected bool   $useEmail;
-    // Telegram disabled (Gmail only)
-    protected bool   $useTelegram = false;
-    protected ?string $telegramBotToken = null;
-    protected ?string $defaultTelegramChatId = null;
 
     public function __construct()
     {
@@ -26,8 +22,6 @@ class NotificationService
 
         // Force email notifications ON by default (Gmail)
         $this->useEmail  = true;
-        // Explicitly disable Telegram
-        $this->useTelegram = false;
     }
 
     // Backward-compatible helper kept (unused). Prefer sendEmailMessage.
@@ -120,7 +114,7 @@ class NotificationService
         $waktu = date('d-m-Y H:i', strtotime($assignment->start_datetime));
       $subject = 'Pemberitahuan Penugasan: Booking ' . htmlspecialchars((string)$assignment->car_booking_id);
 
-      // Professional, polite Indonesian email HTML
+      // Isi Email untuk penugasan Driver
       $notes = htmlspecialchars((string)($assignment->notes ?? '-'));
       $notes = $notes === '' ? '-' : nl2br($notes);
 
@@ -311,7 +305,7 @@ class NotificationService
                 }
             }
         }
-
+/* Isi Email untuk notifikasi bahawa booking telah disetujui */
         $html = '<!doctype html><html><head><meta charset="utf-8"><title>' . htmlspecialchars($subject) . '</title></head><body style="font-family: Arial, sans-serif; color: #222;">'
             . '<p>Yth. ' . htmlspecialchars((string)$displayName) . ',</p>'
             . '<p>Permintaan reservasi Anda telah disetujui oleh tim administrasi. Berikut ringkasan:</p>'

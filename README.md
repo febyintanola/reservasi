@@ -32,12 +32,7 @@ Dibangun dengan CodeIgniter 4 (PHP 8.1+). Mendukung role Admin, User, dan Driver
   - `database.default.hostname`, `database.default.database`, `database.default.username`, `database.default.password`
 - Email (opsional, untuk notifikasi)
   - `email.fromEmail`, `email.fromName` jika memakai `NotificationService`
-
-3) Migrasi skema (bila tersedia) dan siapkan tabel yang dipakai aplikasi: 
-- `users`, `user_profile`
-- `room_bookings`, `rooms`
-- `car_bookings`
-- `drivers`, `driver_assignments`
+  
 # Aplikasi Reservasi (Ruang Rapat & Kendaraan)
 
 Ini adalah aplikasi internal sederhana untuk mengelola reservasi ruang rapat dan pemesanan kendaraan dinas.

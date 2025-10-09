@@ -9,6 +9,10 @@
         <link href="<?= base_url('css/theme.css') ?>" rel="stylesheet"/>
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"/>
         <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+        <!-- Custom favicon/logo -->
+        <link rel="icon" type="image/png" href="<?= base_url('uploads/logo.png') ?>" />
+        <link rel="apple-touch-icon" href="<?= base_url('uploads/logo.png') ?>" />
+        <link rel="shortcut icon" href="<?= base_url('uploads/logo.png') ?>" />
     </head>
     <body class="flex bg-white min-h-screen">
         <?php
@@ -30,7 +34,10 @@
  <div class="flex-1 flex flex-col">
     <header class="flex items-center justify-between px-4 py-3 border-b border-white bg-white">
         <div class="flex-1 flex justify-center">
-            <div class="text-black text-base font-normal">RuMa</div>
+            <div class="flex items-center gap-2">
+                <img src="<?= base_url('uploads/logo.png') ?>" alt="Logo RuMa" class="h-7 w-7 object-contain" />
+                <div class="text-black text-base font-semibold">RuMa</div>
+            </div>
         </div>
         <div class="flex items-center ml-auto gap-3">
             <a href="<?= base_url('/logout') ?>" class="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">

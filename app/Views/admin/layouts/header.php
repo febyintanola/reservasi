@@ -10,6 +10,10 @@
   <link href="<?= base_url('css/theme.css') ?>" rel="stylesheet" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- Custom favicon/logo -->
+  <link rel="icon" type="image/png" href="<?= base_url('uploads/logo.png') ?>" />
+  <link rel="apple-touch-icon" href="<?= base_url('uploads/logo.png') ?>" />
+  <link rel="shortcut icon" href="<?= base_url('uploads/logo.png') ?>" />
 </head>
 <body class="flex bg-slate-50 min-h-screen">
   <?php
@@ -34,7 +38,8 @@
   <!-- Main Content Area -->
   <div class="flex-1 flex flex-col">
     <header class="app-header flex items-center justify-between px-4 py-3 bg-white">
-      <div class="flex items-center">
+      <div class="flex items-center gap-2">
+        <img src="<?= base_url('uploads/logo.png') ?>" alt="Logo RuMa" class="h-8 w-8 object-contain" />
         <span class="text-xl font-semibold text-slate-800">RuMa</span>
       </div>
       <a href="<?= base_url('/admin/profile') ?>" class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden ring-1 ring-slate-200">
