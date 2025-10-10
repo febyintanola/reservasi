@@ -431,9 +431,14 @@ class DriverDashboardController extends BaseController
             $user = null;
         }
 
+		// Daftar divisi (gunakan helper agar tidak hard-coded di view)
+		helper('DivisionHelper');
+		$divisiList = function_exists('division_list') ? division_list() : [];
+
 		return view('driver/profile', [
 			'profile' => $profile,
             'user' => $user,
+			'divisiList' => $divisiList,
 		]);
 	}
 }

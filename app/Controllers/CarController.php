@@ -564,4 +564,39 @@ class CarController extends BaseController
         ]);
     }
 
+    /** Hapus driver (admin) */
+    public function driverDelete($id)
+    {
+        $driverModel = new DriverModel();
+        $driver = $driverModel->find($id);
+        if (!$driver) return redirect()->to('admin/driver')->with('error','Driver tidak ditemukan');
+
+        // Cegah hapus jika driver sedang on duty? (opsional)
+        // if (strtolower($driver['status'] ?? '') === 'on duty') {
+        //     return redirect()->to('admin/driver')->with('error','Tidak bisa menghapus driver yang sedang On Duty.');
+        // }
+
+        // Hapus foto jika di bawah public/uploads
+        if (!empty($driver['foto_url'])) {
+            $urlPath = parse_url($driver['foto_url'], PHP_URL_PATH) ?: $driver['foto_url'];
+            if ($urlPath) {
+                if (!str_starts_with($urlPath, '/')) {
+                    $urlPath = '/' . ltrim($urlPath, '/');
+                }
+                if (str_starts_with($urlPath, '/uploads/')) {
+                    $filePath = rtrim(FCPATH, DIRECTORY_SEPARATOR) . $urlPath;
+                    if (is_file($filePath) && is_writable($filePath)) {
+                        @unlink($filePath);
+                    }
+                }
+            }
+        }
+
+        try {
+            $driverModel->delete($id);
+            return redirect()->to('admin/driver')->with('success','Driver berhasil dihapus.');
+        } catch (\Throwable $e) {
+            return redirect()->to('admin/driver')->with('error','Gagal menghapus driver: ' . $e->getMessage());
+        }
+    }
 }

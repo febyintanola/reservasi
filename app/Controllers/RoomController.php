@@ -303,6 +303,52 @@ class RoomController extends BaseController
         }
         return redirect()->back()->withInput()->with('error', $errMsg);
     }
+
+    /** Hapus ruangan (admin) */
+    public function delete($id)
+    {
+        $model = new RoomModel();
+        $room = $model->find($id);
+        if (!$room) {
+            return redirect()->to('/admin/ruang')->with('error', 'Ruangan tidak ditemukan.');
+        }
+
+        // Optional: hapus file gambar yang berada di public/uploads jika URL menunjuk ke sana
+        if (!empty($room['ruangrapat_url'])) {
+            // ruangrapat_url biasanya base_url('uploads/xxx'); kita mapping ke path file
+            $urlPath = parse_url($room['ruangrapat_url'], PHP_URL_PATH);
+            if ($urlPath) {
+                // Pastikan path dimulai dengan /uploads/
+                if (str_starts_with($urlPath, '/uploads/')) {
+                    $filePath = rtrim(FCPATH, DIRECTORY_SEPARATOR) . $urlPath;
+                    if (is_file($filePath) && is_writable($filePath)) {
+                        @unlink($filePath);
+                    }
+                }
+            }
+        }
+
+        try {
+            if ($model->delete($id)) {
+                return redirect()->to('/admin/ruang')->with('success', 'Ruangan berhasil dihapus.');
+            }
+            $modelErrors = $model->errors();
+            $dbError = $model->db->error();
+            $errMsg = '';
+            if (!empty($modelErrors)) {
+                $errMsg .= implode("\n", $modelErrors) . "\n";
+            }
+            if (!empty($dbError['message'])) {
+                $errMsg .= 'DB: ' . $dbError['message'];
+            }
+            if ($errMsg === '') {
+                $errMsg = 'Gagal menghapus ruangan (alasan tidak diketahui).';
+            }
+            return redirect()->to('/admin/ruang')->with('error', $errMsg);
+        } catch (\Throwable $e) {
+            return redirect()->to('/admin/ruang')->with('error', 'Gagal menghapus ruangan: ' . $e->getMessage());
+        }
+    }
     /** Cari slot alternatif di ruangan manapun pada hari yang sama. */
     public function findNextAvailableSlotAnyRoom()
     {

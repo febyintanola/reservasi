@@ -9,6 +9,8 @@
   <link rel="icon" type="image/png" href="<?= base_url('uploads/logo.png') ?>" />
   <link rel="apple-touch-icon" href="<?= base_url('uploads/logo.png') ?>" />
   <link rel="shortcut icon" href="<?= base_url('uploads/logo.png') ?>" />
+  <link href="<?= base_url('css/theme.css') ?>" rel="stylesheet" />
+
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Quicksand&display=swap');
     body {

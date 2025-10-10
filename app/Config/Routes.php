@@ -76,12 +76,14 @@ $routes->group('admin', ['filter' => 'auth'], function($routes) {
         $routes->post('driver/store', 'CarController::driverStore');
         $routes->get('driver/edit/(:num)', 'CarController::driverEdit/$1');
         $routes->post('driver/update/(:num)', 'CarController::driverUpdate/$1');
+        $routes->post('driver/delete/(:num)', 'CarController::driverDelete/$1');
         $routes->get('ruang', 'RoomController::adminIndex');
         $routes->get('ruang/create', 'RoomController::create');
         $routes->get('ruang/tambah', 'RoomController::create');
         $routes->post('ruang/store', 'RoomController::store');
         $routes->get('ruang/edit/(:num)', 'RoomController::edit/$1');
         $routes->post('ruang/update/(:num)', 'RoomController::update/$1');
+        $routes->post('ruang/delete/(:num)', 'RoomController::delete/$1');
         $routes->get('car/create','CarController::create');
         $routes->get('car/tambah','CarController::create');
         $routes->post('car/store','CarController::store');
