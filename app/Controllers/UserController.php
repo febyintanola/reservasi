@@ -11,7 +11,8 @@ class UserController extends BaseController
     public function profile()
     {
         $session = session();
-        $userId = $session->get('user_id');
+        $sessionUser = $session->get('user') ?? [];
+        $userId = $session->get('user_id') ?? ($sessionUser['id'] ?? null);
 
         if (!$userId) {
             return redirect()->to('/login')->with('error', 'Silakan login dahulu.');
@@ -22,9 +23,28 @@ class UserController extends BaseController
 
         // Ambil data user
         $user = $userModel->find($userId);
+        if (!$user && $sessionUser !== []) {
+            $user = [
+                'id'       => $sessionUser['id'] ?? null,
+                'email'    => $sessionUser['email'] ?? null,
+                'username' => $sessionUser['sam'] ?? null,
+            ];
+        }
 
         // Ambil data profil user
         $profile = $userProfileModel->where('user_id', $userId)->first();
+        $profile = $profile ? (array) $profile : [];
+
+        if ($sessionUser !== []) {
+            $profile = array_replace($profile, array_filter([
+                'nama'  => $sessionUser['name'] ?? null,
+                'role'  => $sessionUser['role'] ?? null,
+                'email' => $sessionUser['email'] ?? null,
+                'upn'   => $sessionUser['upn'] ?? null,
+                'sam'   => $sessionUser['sam'] ?? null,
+                'dn'    => $sessionUser['dn'] ?? null,
+            ], static fn ($value) => $value !== null));
+        }
 
     // Tentukan konteks (admin vs user) berdasarkan URL saat ini
     $isAdminContext = (strpos(uri_string(), 'admin') === 0) || (strpos(current_url(), '/admin') !== false);
@@ -32,7 +52,9 @@ class UserController extends BaseController
     // Kirim ke view yang sesuai
     return view($isAdminContext ? 'admin/profile' : 'user/profile', [
             'user'    => $user,
-            'profile' => $profile
+            'profile' => $profile,
+            'sessionUser' => $sessionUser,
+            'authProvider' => $session->get('authProvider')
         ]);
     }
 
@@ -84,6 +106,13 @@ class UserController extends BaseController
     } else {
         $profileData['user_id'] = $userId;
         $userProfileModel->insert($profileData);
+    }
+
+    $session = session();
+    $sessionUser = $session->get('user');
+    if ($sessionUser) {
+        $sessionUser['name'] = $profileData['nama'] ?? ($sessionUser['name'] ?? null);
+        $session->set('user', $sessionUser);
     }
 
     // Redirect kembali ke halaman profil sesuai scope

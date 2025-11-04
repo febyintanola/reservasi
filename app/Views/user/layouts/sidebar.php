@@ -1,18 +1,29 @@
 <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 <?php
-$fotoUrl = base_url('public/css/default-avatar.png');
-$uid = session('user_id');
+$defaultAvatar = base_url('public/css/default-avatar.png');
+$sessionUser   = session('user') ?? [];
+$uid           = session('user_id') ?? ($sessionUser['id'] ?? null);
+$displayName   = $sessionUser['name'] ?? session('nama') ?? 'User';
+$displayEmail  = $sessionUser['email'] ?? session('email') ?? 'user@example.com';
+$displayDivision = $sessionUser['division'] ?? ($sessionUser['dn'] ?? null);
+$fotoUrl = $defaultAvatar;
+
 if ($uid) {
   try {
-    $profileModel = model('App\\Models\\UserProfileModel');
+    $profileModel = model('App\Models\UserProfileModel');
     $p = $profileModel->where('user_id', $uid)->first();
-    if (!empty($p['foto_url'])) {
+    if (! empty($p['foto_url'])) {
       $fotoUrl = $p['foto_url'];
     }
   } catch (\Throwable $e) {
     // ignore
   }
 }
+
+if ($fotoUrl === $defaultAvatar && ! empty($sessionUser['avatar'])) {
+  $fotoUrl = $sessionUser['avatar'];
+}
+$hasPhoto = $fotoUrl !== $defaultAvatar;
 ?>
 
   <!-- Sidebar -->
@@ -92,12 +103,24 @@ if ($uid) {
 
     <!-- User info -->
     <div class="flex items-center space-x-2.5 px-3 pb-5">
-      <img src="<?= esc($fotoUrl) ?>"
-           alt="Foto profil"
-           class="w-8 h-8 rounded-full object-cover border border-gray-200" />
+      <?php if ($hasPhoto): ?>
+        <img src="<?= esc($fotoUrl) ?>"
+             alt="Foto profil"
+             class="w-8 h-8 rounded-full object-cover border border-gray-200"
+             onerror="this.onerror=null;this.src='<?= esc($defaultAvatar) ?>';" />
+      <?php else: ?>
+        <div class="w-8 h-8 rounded-full border border-gray-200 bg-gray-100 flex items-center justify-center">
+          <i class="fas fa-user text-gray-400 text-sm"></i>
+        </div>
+      <?php endif; ?>
       <div class="hidden md:block" x-show="open">
-        <p class="text-gray-900 font-semibold text-sm"><?= session('nama') ?? 'User' ?></p>
-        <p class="text-gray-600 text-xs"><?= session('email') ?? 'user@example.com' ?></p>
+        <p class="text-gray-900 font-semibold text-sm"><?= esc($displayName) ?></p>
+        <p class="text-gray-600 text-xs"><?= esc($displayEmail) ?></p>
+        <?php if (! empty($displayDivision)): ?>
+          <p class="text-gray-500 text-[11px] leading-tight truncate" title="<?= esc($displayDivision) ?>">
+            <?= esc($displayDivision) ?>
+          </p>
+        <?php endif; ?>
       </div>
     </div>
   </aside>

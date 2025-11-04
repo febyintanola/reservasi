@@ -27,10 +27,10 @@ class RoomController extends BaseController
         $jam_selesai = $this->request->getGet('jam_selesai');
         $peserta = $this->request->getGet('peserta');
 
-        $roomModel = new \App\Models\RoomModel();
+        $roomModel = new RoomModel();
         $rooms = $roomModel->findAll();
 
-        $bookingModel = new \App\Models\BookingRuangModel();
+        $bookingModel = new BookingRuangModel();
 
         foreach ($rooms as &$room) {
             
@@ -97,7 +97,7 @@ class RoomController extends BaseController
         }
 
         // Ambil data ruangan dari DB
-        $roomModel = new \App\Models\RoomModel();
+        $roomModel = new RoomModel();
         $room = $roomModel->find($roomId);
 
         // Kirim semua data ke view
@@ -185,7 +185,7 @@ class RoomController extends BaseController
             }
         }
 
-        $roomModel = new \App\Models\RoomModel();
+        $roomModel = new RoomModel();
         if ($roomModel->insert($data)) {
             return redirect()->to('/admin/ruang')->with('success', 'Ruangan berhasil ditambahkan.');
         }

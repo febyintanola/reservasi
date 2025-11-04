@@ -114,6 +114,18 @@
 			<?php if (($booking['status'] ?? '') === 'accepted' && empty($assignment)): ?>
 				<a href="<?= base_url('admin/car/assign/' . ($booking['id'] ?? '')) ?>" class="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm">Assign Driver & Mobil</a>
 			<?php endif; ?>
+
+			<?php if (!empty($assignment)): ?>
+				<?php // Show 'Selesai' button when assignment exists and is not finished ?>
+				<?php if (empty($assignment['completed_at'])): ?>
+					<form action="<?= base_url('admin/car/assignment/finish/' . ($assignment['id'] ?? '')) ?>" method="post" onsubmit="return confirm('Tandai tugas driver ini selesai?');">
+						<?= csrf_field() ?>
+						<button type="submit" class="px-4 py-2 rounded bg-yellow-600 hover:bg-yellow-700 text-white text-sm">Selesai</button>
+					</form>
+				<?php else: ?>
+					<span class="px-2 py-1 text-xs rounded-full bg-gray-200 text-gray-700">Selesai: <?= esc($assignment['completed_at']) ?></span>
+				<?php endif; ?>
+			<?php endif; ?>
 		</div>
 	</div>
 </main>

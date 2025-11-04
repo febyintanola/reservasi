@@ -74,6 +74,7 @@ class AdAuthService
         }
 
         try {
+            // Build base connection WITHOUT credentials first
             $connConfig = [
                 'hosts' => $this->hosts,
                 // base_dn may be empty here; we will attempt discovery if so
@@ -83,11 +84,6 @@ class AdAuthService
                 'use_tls' => $this->useTls,
                 'version' => $this->version,
             ];
-
-            if (!empty($this->bindUser) && !empty($this->bindPassword)) {
-                $connConfig['username'] = $this->bindUser;
-                $connConfig['password'] = $this->bindPassword;
-            }
 
             $connection = new Connection($connConfig);
             Container::addConnection($connection);
@@ -111,9 +107,18 @@ class AdAuthService
                 }
             }
 
-            // If service account present -> search then bind as user
+            // If service account present -> try to bind with it to allow search
+            $serviceBound = false;
             if (!empty($this->bindUser) && !empty($this->bindPassword)) {
-                // Try common attributes
+                try {
+                    $serviceBound = $connection->auth()->attempt($this->bindUser, $this->bindPassword);
+                } catch (BindException $e) {
+                    $serviceBound = false; // fall back to direct attempts
+                }
+            }
+
+            if ($serviceBound) {
+                // With service bind, search the user by common identifiers then verify password by binding as DN
                 $ldapUser = LdapUser::where('mail', '=', $identifier)->first();
                 if (!$ldapUser) {
                     $ldapUser = LdapUser::where('userprincipalname', '=', $identifier)->first();
@@ -122,22 +127,31 @@ class AdAuthService
                     $ldapUser = LdapUser::where('samaccountname', '=', $identifier)->first();
                 }
 
-                if (!$ldapUser) {
-                    return ['success' => false, 'user' => null, 'error' => 'User not found in AD'];
+                if ($ldapUser) {
+                    $dn = $ldapUser->getDn();
+                    if ($connection->auth()->attempt($dn, $password)) {
+                        return ['success' => true, 'user' => $ldapUser, 'error' => null];
+                    }
+                    // fall through to try direct variants in case of DN mismatch
                 }
-
-                $dn = $ldapUser->getDn();
-                if ($connection->auth()->attempt($dn, $password)) {
-                    return ['success' => true, 'user' => $ldapUser, 'error' => null];
-                }
-
-                return ['success' => false, 'user' => null, 'error' => 'Invalid credentials'];
             }
 
-            // If no service account -> direct attempt (identifier must be bindable)
-            if ($connection->auth()->attempt($identifier, $password)) {
-                $ldapUser = LdapUser::where('mail', '=', $identifier)->first() ?: LdapUser::where('userprincipalname', '=', $identifier)->first();
-                return ['success' => true, 'user' => $ldapUser, 'error' => null];
+            // Direct attempts with common identity variants (UPN and DOMAIN\\user)
+            $candidates = $this->buildBindCandidates($identifier);
+            foreach ($candidates as $cand) {
+                try {
+                    if ($connection->auth()->attempt($cand, $password)) {
+                        // Try to load user info (best effort)
+                        $ldapUser = LdapUser::where('userprincipalname', '=', $cand)->first();
+                        if (!$ldapUser && strpos($cand, '@') === false) {
+                            $ldapUser = LdapUser::where('samaccountname', '=', $identifier)->first();
+                        }
+                        return ['success' => true, 'user' => $ldapUser, 'error' => null];
+                    }
+                } catch (BindException $e) {
+                    // continue to next candidate
+                    continue;
+                }
             }
 
             return ['success' => false, 'user' => null, 'error' => 'Invalid credentials'];
@@ -146,6 +160,46 @@ class AdAuthService
         } catch (\Throwable $e) {
             return ['success' => false, 'user' => null, 'error' => $e->getMessage()];
         }
+    }
+
+    /**
+     * Build a list of candidate bind identities to try, based on AD_DOMAIN and identifier.
+     */
+    protected function buildBindCandidates(string $identifier): array
+    {
+        $candidates = [];
+        $id = trim($identifier);
+
+        // If identifier already looks like UPN or DOMAIN\\user, try it as-is first
+        if (strpos($id, '@') !== false || strpos($id, '\\') !== false) {
+            $candidates[] = $id;
+        } else {
+            $candidates[] = $id; // raw, in case server accepts short name
+        }
+
+        // Prepare domain variants
+        $domain = trim($this->domain);
+        if ($domain) {
+            $candidates[] = $id . '@' . $domain; // UPN with given domain
+            if (strpos($domain, '.') === false) {
+                // Try .local variant if domain is single-label
+                $candidates[] = $id . '@' . $domain . '.local';
+            }
+            // NetBIOS DOMAIN\\user (first label upper)
+            $netbios = strtoupper(strtok($domain, '.'));
+            $candidates[] = $netbios . '\\' . $id;
+        }
+
+        // De-duplicate while preserving order
+        $uniq = [];
+        $out = [];
+        foreach ($candidates as $c) {
+            if (!isset($uniq[$c])) {
+                $uniq[$c] = true;
+                $out[] = $c;
+            }
+        }
+        return $out;
     }
 
     /**

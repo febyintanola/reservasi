@@ -17,18 +17,28 @@
 </head>
 <body class="flex bg-white min-h-screen">
 <?php
-$hdrFotoUrl = 'https://via.placeholder.com/32';
-$uid = session('user_id');
+$defaultAvatar = base_url('public/css/default-avatar.png');
+$sessionUser   = session('user') ?? [];
+$hdrFotoUrl    = $defaultAvatar;
+$hdrHasPhoto   = false;
+$uid = session('user_id') ?? ($sessionUser['id'] ?? null);
+
 if ($uid) {
   try {
     $profileModel = model('App\\Models\\UserProfileModel');
     $p = $profileModel->where('user_id', $uid)->first();
-    if (!empty($p['foto_url'])) {
+    if (! empty($p['foto_url'])) {
       $hdrFotoUrl = $p['foto_url'];
+      $hdrHasPhoto = true;
     }
   } catch (\Throwable $e) {
     // ignore
   }
+}
+
+if (! $hdrHasPhoto && ! empty($sessionUser['avatar'])) {
+  $hdrFotoUrl = $sessionUser['avatar'];
+  $hdrHasPhoto = true;
 }
 ?>
   
@@ -45,7 +55,12 @@ if ($uid) {
         </div>
       </div>
       <a href="<?= base_url('/user/profile') ?>" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center ml-auto overflow-hidden">
-        <img src="<?= esc($hdrFotoUrl) ?>" alt="Profil" class="w-8 h-8 object-cover" />
+        <?php if ($hdrHasPhoto): ?>
+          <img src="<?= esc($hdrFotoUrl) ?>" alt="Profil" class="w-8 h-8 object-cover"
+               onerror="this.onerror=null;this.src='<?= esc($defaultAvatar) ?>';" />
+        <?php else: ?>
+          <i class="fas fa-user text-gray-400 text-sm"></i>
+        <?php endif; ?>
       </a>
     </header>
 

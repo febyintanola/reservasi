@@ -26,18 +26,37 @@ class RoleFilter implements FilterInterface
      */
     public function before(RequestInterface $request, $arguments = null)
     {
+        helper('auth');
+
+        if (! auth()->loggedIn()) {
+            return redirect()->to('/login');
+        }
+
         $session = session();
         $userRole = strtolower($session->get('role') ?? '');
 
-        if (empty($userRole)) {
-            return redirect()->to('/login');
+        if ($userRole === '') {
+            $user = auth()->user();
+            if ($user !== null) {
+                $profile = \Config\Database::connect()
+                    ->table('user_profile')
+                    ->where('user_id', $user->id)
+                    ->get()
+                    ->getRowArray();
+
+                if ($profile && ! empty($profile['role'])) {
+                    $userRole = strtolower($profile['role']);
+                    $session->set('role', $userRole);
+                }
+            }
         }
 
         if (empty($arguments)) {
             return;
         }
 
-        if (!in_array($userRole, $arguments)) {
+        $allowedRoles = array_map('strtolower', $arguments);
+        if ($userRole === '' || ! in_array($userRole, $allowedRoles, true)) {
             return redirect()->to('/unauthorized');
         }
     }

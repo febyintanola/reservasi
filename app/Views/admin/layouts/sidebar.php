@@ -1,16 +1,28 @@
 <?php
-$fotoUrl = 'https://via.placeholder.com/40';
-$uid= session('user_id');
+$defaultAvatar = base_url('public/css/default-avatar.png');
+$sessionUser   = session('user') ?? [];
+$uid           = session('user_id') ?? ($sessionUser['id'] ?? null);
+$fotoUrl       = $defaultAvatar;
+$hasPhoto      = false;
+$displayName   = $sessionUser['name'] ?? session('nama') ?? 'User';
+$displayEmail  = $sessionUser['email'] ?? session('email') ?? 'user@example.com';
+
 if ($uid) {
   try {
-    $profileModel = model('App\\Models\\UserProfileModel');
-    $p = $profileModel->where('user_id',$uid)->first();
-    if (!empty($p['foto_url'])) {
+    $profileModel = model('App\Models\UserProfileModel');
+    $p = $profileModel->where('user_id', $uid)->first();
+    if (! empty($p['foto_url'])) {
       $fotoUrl = $p['foto_url'];
+      $hasPhoto = true;
     }
-  } catch (\Throwable $e){
-    //ignore
+  } catch (\Throwable $e) {
+    // ignore
   }
+}
+
+if (! $hasPhoto && ! empty($sessionUser['avatar'])) {
+  $fotoUrl = $sessionUser['avatar'];
+  $hasPhoto = true;
 }
 // Determine active route for admin
 $uri = trim(uri_string() ?? '', '/');
@@ -97,12 +109,19 @@ $isProfile = ($uri === 'admin/profile');
 
     <!-- User info -->
     <div class="flex items-center space-x-2.5 px-3 pb-5">
-      <img src="<?= esc($fotoUrl) ?>"
-           alt="Foto profil"
-           class="w-8 h-8 rounded-full object-cover border border-gray-200" />
+      <?php if ($hasPhoto): ?>
+        <img src="<?= esc($fotoUrl) ?>"
+             alt="Foto profil"
+             class="w-8 h-8 rounded-full object-cover border border-gray-200"
+             onerror="this.onerror=null;this.src='<?= esc($defaultAvatar) ?>';" />
+      <?php else: ?>
+        <div class="w-8 h-8 rounded-full border border-gray-200 bg-gray-100 flex items-center justify-center">
+          <i class="fas fa-user text-gray-400 text-sm"></i>
+        </div>
+      <?php endif; ?>
       <div class="hidden md:block" x-show="open">
-        <p class="text-gray-900 font-semibold text-sm"><?= session('nama') ?? 'User' ?></p>
-        <p class="text-gray-600 text-sm"><?= session('email') ?? 'user@example.com' ?></p>
+        <p class="text-gray-900 font-semibold text-sm"><?= esc($displayName) ?></p>
+        <p class="text-gray-600 text-xs"><?= esc($displayEmail) ?></p>
       </div>
     </div>
   </aside>

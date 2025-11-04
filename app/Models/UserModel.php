@@ -9,8 +9,7 @@ class UserModel extends Model
     protected $table = 'users';
     protected $primaryKey = 'id';
     protected $allowedFields = [
-        'username', 'email', 'password', 'status', 'status_message',
-        'active', 'last_active', 'created_at', 'updated_at', 'deleted_at'
+        'name','email','username','password','role','upn','sam','dn'  // ganti password_hash jadi password
     ];
     protected $useTimestamps = true;
     protected $useSoftDeletes = true;

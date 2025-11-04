@@ -109,12 +109,17 @@ class CarController extends BaseController
             $currentDriverId = $currentAssignment['driver_id'] ?? null;
 
             // Cari driver yang sibuk di rentang tanggal ini (overlap hari)
+            // Abaikan assignment yang sudah selesai (completed_at) sebelum periode mulai
             $busyDriverIds = $assignmentModel
                 ->select('driver_assignments.driver_id')
                 ->join('car_bookings', 'car_bookings.id = driver_assignments.car_booking_id')
                 ->where('car_bookings.id !=', $id)
                 ->where('car_bookings.tanggal_pergi <=', $end)
                 ->where('car_bookings.tanggal_pulang >=', $start)
+                ->groupStart()
+                    ->where('driver_assignments.completed_at IS NULL')
+                    ->orWhere('driver_assignments.completed_at >', $start)
+                ->groupEnd()
                 ->findColumn('driver_id');
             $busyDriverIds = $busyDriverIds ? array_unique(array_filter($busyDriverIds)) : [];
 
@@ -136,8 +141,8 @@ class CarController extends BaseController
     // Proses simpan assign driver & mobil
         public function assignSave($id)
         {
-            $assignmentModel = new \App\Models\DriverAssignmentModel();
-            $driverModel = new \App\Models\DriverModel();
+            $assignmentModel = new DriverAssignmentModel();
+            $driverModel = new DriverModel();
 
             $driver_id   = (int)$this->request->getPost('driver_id');
             $mobil_jenis = $this->request->getPost('mobil_jenis');
@@ -151,6 +156,7 @@ class CarController extends BaseController
                 'mobil_jenis'    => $mobil_jenis,
                 'mobil_plat'     => $mobil_plat,
                 'start_datetime' => $start_datetime,
+                'end_datetime'   => $this->request->getPost('end_datetime'),
                 'reminder_sent'  => 0,
                 'notes'          => $notes,
             ];
@@ -158,7 +164,9 @@ class CarController extends BaseController
             // Insert/update assignment
             $existing = $assignmentModel->where('car_booking_id', $id)->first();
             if ($existing) {
-                $assignmentModel->update($existing['id'], $dataAssign);
+                if (!empty($dataAssign) && isset($existing['id'])) {
+                    $assignmentModel->update($existing['id'], $dataAssign);
+                }
                 $assignmentId = $existing['id'];
             } else {
                 $assignmentModel->insert($dataAssign);
@@ -170,18 +178,112 @@ class CarController extends BaseController
             $notif = new \App\Libraries\NotificationService();
             $assignment = (object) $assignmentModel->find($assignmentId);
             // Pastikan assignment punya tanggal_pergi
-            if (!isset($assignment->tanggal_pergi)) {
-                $carModel = new CarModel();
+            $carModel = new CarModel();
+            try {
                 $booking = $carModel->find($id);
-                if ($booking && isset($booking['tanggal_pergi'])) {
-                    $assignment->tanggal_pergi = $booking['tanggal_pergi'];
+                $today = new DateTime('today');
+                $activeToday = false;
+
+                if ($booking && !empty($booking['tanggal_pergi']) && !empty($booking['tanggal_pulang'])) {
+                    try {
+                        $bStart = new DateTime($booking['tanggal_pergi']);
+                        $bEnd = new DateTime($booking['tanggal_pulang']);
+                        if ($today >= $bStart && $today <= $bEnd) {
+                            $activeToday = true;
+                        }
+                    } catch (\Throwable $e) { /* ignore malformed booking dates */ }
                 }
-            }
+
+                // Jika form menyediakan start_datetime, juga periksa apakah itu hari ini
+                if (!$activeToday && !empty($start_datetime)) {
+                    try {
+                        $sd = new DateTime($start_datetime);
+                        if ($sd->format('Y-m-d') === $today->format('Y-m-d')) {
+                            $activeToday = true;
+                        }
+                    } catch (\Throwable $e) { /* ignore malformed datetime */ }
+                }
+
+                if ($activeToday && $driver) {
+                    $driverUpdate = ['status' => 'On Duty'];
+                    if (!empty($driverUpdate)) {
+                        $driverModel->update((int)$driver_id, $driverUpdate);
+                    }
+                }
+
+                // Jika ada assignment lama dengan driver berbeda, dan driver lama tidak lagi punya tugas hari ini, set Available
+                if (!empty($existing) && !empty($existing['driver_id']) && (int)$existing['driver_id'] !== (int)$driver_id) {
+                    $oldId = (int)$existing['driver_id'];
+                    // Cek apakah driver lama masih punya assignment aktif (belum selesai) yang overlap hari ini
+                    $hasOther = (int)$assignmentModel
+                        ->select('driver_assignments.id')
+                        ->join('car_bookings', 'car_bookings.id = driver_assignments.car_booking_id')
+                        ->where('driver_assignments.driver_id', $oldId)
+                        ->where('car_bookings.tanggal_pergi <=', $today->format('Y-m-d'))
+                        ->where('car_bookings.tanggal_pulang >=', $today->format('Y-m-d'))
+                        ->groupStart()
+                            ->where('driver_assignments.completed_at IS NULL')
+                            ->orWhere('driver_assignments.completed_at >', $today->format('Y-m-d'))
+                        ->groupEnd()
+                        ->where('car_bookings.id !=', $id)
+                        ->countAllResults() > 0;
+                    if (!$hasOther) {
+                        $driverUpdate = ['status' => 'Available'];
+                        if (!empty($driverUpdate)) {
+                            $driverModel->update($oldId, $driverUpdate);
+                        }
+                    }
+                }
+            } catch (\Throwable $e) { /* ignore */ }
+
             $notif->notifyDriverAssignment($assignment, (object)$driver);
 
             return redirect()->to('admin/car/detailMobil/' . $id)
                 ->with('message', 'Driver & Mobil berhasil di-assign dan notifikasi dikirim.');
         }
+
+    /**
+     * Tandai assignment driver sebagai selesai (admin/driver)
+     */
+    public function finishAssignment($assignmentId)
+    {
+        $assignmentModel = new DriverAssignmentModel();
+        $driverModel = new DriverModel();
+
+        $assignment = $assignmentModel->find($assignmentId);
+        if (!$assignment) {
+            return redirect()->back()->with('error', 'Assignment tidak ditemukan');
+        }
+
+        $now = (new DateTime())->format('Y-m-d H:i:s');
+        $updateData = ['completed_at' => $now];
+        if (!empty($updateData)) {
+            $assignmentModel->update($assignmentId, $updateData);
+        }
+
+        // Jika driver tidak punya assignment lain yang aktif pada saat ini, set Available
+        $driverId = (int)($assignment['driver_id'] ?? 0);
+        if ($driverId > 0) {
+            $hasOtherActive = (int)$assignmentModel
+                ->select('driver_assignments.id')
+                ->join('car_bookings', 'car_bookings.id = driver_assignments.car_booking_id')
+                ->where('driver_assignments.driver_id', $driverId)
+                ->groupStart()
+                    ->where('driver_assignments.completed_at IS NULL')
+                    ->orWhere('driver_assignments.completed_at >', $now)
+                ->groupEnd()
+                ->countAllResults() > 0;
+
+                if (!$hasOtherActive) {
+                    $driverUpdate = ['status' => 'Available'];
+                    if (!empty($driverUpdate)) {
+                        $driverModel->update($driverId, $driverUpdate);
+                    }
+                }
+        }
+
+        return redirect()->back()->with('success', 'Assignment ditandai selesai.');
+    }
 
     /**
      * Cek ketersediaan driver berdasarkan overlap tanggal (hari penuh).
@@ -191,12 +293,19 @@ class CarController extends BaseController
         {
             if ($driverId <= 0) return false;
             $assignmentModel = new DriverAssignmentModel();
-            $builder = $assignmentModel
-                ->select('driver_assignments.id')
-                ->join('car_bookings', 'car_bookings.id = driver_assignments.car_booking_id')
-                ->where('driver_assignments.driver_id', $driverId)
-                ->where('car_bookings.tanggal_pergi <=', $end)
-                ->where('car_bookings.tanggal_pulang >=', $start);
+                $builder = $assignmentModel
+                    ->select('driver_assignments.id')
+                    ->join('car_bookings', 'car_bookings.id = driver_assignments.car_booking_id')
+                    ->where('driver_assignments.driver_id', $driverId)
+                    ->groupStart()
+                        ->where('COALESCE(driver_assignments.end_datetime, car_bookings.tanggal_pulang) >', $start)
+                        ->where('COALESCE(driver_assignments.start_datetime, car_bookings.tanggal_pergi) <', $end)
+                    ->groupEnd()
+                    // ignore assignments completed before the requested start
+                    ->groupStart()
+                        ->where('driver_assignments.completed_at IS NULL')
+                        ->orWhere('driver_assignments.completed_at >', $start)
+                    ->groupEnd();
             if ($currentBookingId) {
                 $builder->where('car_bookings.id !=', $currentBookingId);
             }

@@ -48,14 +48,15 @@
       <form method="post" action="<?= base_url('/login') ?>" autocomplete="off">
         <?= csrf_field() ?> <!-- Tambahan keamanan CSRF -->
 
-        <label for="email" class="block text-xs mb-1">Email</label>
+        <label for="email" class="block text-xs mb-1">Email atau Username</label>
         <input
-          type="email"
+          type="text"
           name="email"
           id="email"
+          placeholder="Email atau username (contoh: user@domain.local atau user123)"
           required
           value="<?= old('email') ?>"
-          class="w-full text-sm border border-gray-300 rounded-md px-3 py-2 mb-4 focus:outline-none focus:ring-1 focus:ring-gray-400"
+          class="w-full text-sm border border-gray-300 rounded-md px-3 py-2 mb-2 focus:outline-none focus:ring-1 focus:ring-gray-400"
         />
 
         <label for="password" class="block text-xs mb-1">Password</label>

@@ -66,6 +66,8 @@ $routes->group('admin', ['filter' => 'auth'], function($routes) {
         // Assign driver & mobil
         $routes->get('car/assign/(:num)', 'CarController::assignForm/$1');
         $routes->post('car/assign_save/(:num)', 'CarController::assignSave/$1');
+    // Mark assignment finished (admin)
+    $routes->post('car/assignment/finish/(:num)', 'CarController::finishAssignment/$1');
         $routes->get('mobil', 'Admin\MobilController::index');
         // Admin Car bookings list & CRUD
         $routes->get('car', 'CarController::adminIndex');
@@ -116,6 +118,7 @@ $routes->post('/reset-password', 'AuthController::resetPasswordProcess');
 
 // Unauthorized
 $routes->get('/unauthorized', 'AuthController::unauthorized');
+$routes->get('/debug/ldap', 'AuthController::ldapDebug'); // Hapus setelah testing
 
 // === ROUTES UNTUK DRIVER ===
 $routes->group('driver', ['filter' => 'auth'], function($routes) {

@@ -1,5 +1,6 @@
 <?= $this->extend('admin/layouts/header')?>
 <?= $this->section('content') ?>
+<?php $sessionUser = session('user') ?? []; ?>
 
 <main class="flex-grow flex flex-col items-center px-4">
     <?php if (session()->getFlashdata('success')): ?>
@@ -17,11 +18,16 @@
         <?= csrf_field() ?>
         <input type="hidden" name="user_id" value="<?= esc($user['id']) ?>" />
 
-        <div class="mb-2 relative w-24 h-24 mx-auto">
-            <!-- Foto Profil -->
-            <img id="previewFoto" src="<?= esc($profile['foto_url'] ?? 'public/css/default-avatar.png') ?>"
-             alt="User profile picture"
-             class="w-24 h-24 rounded-full border border-gray-300 object-cover"/>
+    <div class="mb-2 relative w-24 h-24 mx-auto">
+      <?php
+      $defaultAvatar = base_url('public/css/default-avatar.png');
+      $currentAvatar = $profile['foto_url'] ?? ($sessionUser['avatar'] ?? null);
+      $currentAvatar = $currentAvatar ?: $defaultAvatar;
+      ?>
+      <img id="previewFoto" src="<?= esc($currentAvatar) ?>"
+       alt="User profile picture"
+       class="w-24 h-24 rounded-full border border-gray-300 object-cover"
+       onerror="this.onerror=null;this.src='<?= esc($defaultAvatar) ?>';"/>
 
              <!--Tombol Upload Foto-->
             <label for="foto" class="absolute bottom-0 right-0 cursor-pointer bg-black bg-opacity-50 text-white text-xs rounded px-1">
@@ -33,9 +39,9 @@
     </div>
     <div>
         <label for="nama" class="block text-sm text-gray-900 mb-1">Nama</label>
-        <input id="nama" name="nama" type="text"
+  <input id="nama" name="nama" type="text"
         class="block w-full border border-gray-300 rounded-md p-2"
-        value="<?=esc($profile['nama']?? '')?>" required />
+  value="<?= esc($profile['nama'] ?? ($sessionUser['name'] ?? '')) ?>" required />
     </div>
 
     <div>

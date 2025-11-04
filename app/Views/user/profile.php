@@ -56,22 +56,9 @@
 
     <div>
       <label for="divisi" class="block text-sm text-gray-900 mb-1">Divisi</label>
-      <select id="divisi" name="divisi"
-              class="w-full rounded-md border border-gray-300 px-3 py-2 text-black"
-              required>
-        <option disabled <?= empty($profile['divisi']) ? 'selected' : '' ?>>Pilih Divisi</option>
-        <?php
-        $divisiList = [
-          'GM','Umum','Keuangan','Akuntansi','Anggaran','SIS','Humas','SDM',
-          'Engginering','K3','DHR 3','Ahli','RPH 1','DHR 1','RPH 2','DHR 2',
-          'Area Services','RPH 3','Driver'
-        ];
-        foreach ($divisiList as $divisi): ?>
-          <option value="<?= esc($divisi) ?>" <?= (isset($profile['divisi']) && $profile['divisi'] === $divisi) ? 'selected' : '' ?>>
-            <?= esc($divisi) ?>
-          </option>
-        <?php endforeach; ?>
-      </select>
+      <input id="divisi" name="divisi" type="text"
+             class="w-full rounded-md border border-gray-300 px-3 py-2 text-black"
+             value="<?= esc($profile['divisi'] ?? ($sessionUser['division'] ?? '')) ?>" readonly />
     </div>
 
     <div class="flex justify-center items-center gap-6 mt-6">
