@@ -35,7 +35,7 @@ class CarModel extends Model
     /** Ambil semua booking mobil milik user tertentu. */
     public function getByUser($userId)
     {
-        return $this->where('user_id', $userId)->findAll();
+        return $this->where('user_id', $userId)->orderBy('tanggal_pergi', 'DESC')->findAll();
     }
     /** Ambil semua booking mobil untuk listing admin (urut terbaru). */
     public function getAllBookings()

@@ -72,22 +72,22 @@ if (! $hdrHasPhoto && ! empty($sessionUser['avatar'])) {
   <?php $notif = session()->getFlashdata('notif'); ?>
 
   <div id="toast-notif"
-       class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 transition-opacity duration-300 <?= $notif ? '' : 'opacity-0 pointer-events-none' ?>">
-    <div class="w-full max-w-lg sm:max-w-xl border border-gray-300 rounded-lg bg-white shadow-lg p-6 relative">
-      <div class="flex items-start justify-between mb-3">
-        <div class="flex items-center gap-2">
-          <span class="text-black text-lg">ℹ️</span>
-          <span class="font-semibold text-black text-base leading-tight">
-            <?= esc($notif['title'] ?? 'Berhasil') ?>
-          </span>
-        </div>
-        <button type="button" id="toast-close" class="text-black text-lg leading-none hover:opacity-70">
-          ✖
-        </button>
+       class="fixed bottom-6 right-6 z-50 w-full max-w-sm transition-all duration-300 <?= $notif ? 'opacity-100 translate-y-0' : 'opacity-0 pointer-events-none translate-y-2' ?>">
+    <div class="alert-success shadow-lg flex items-start gap-3">
+      <div class="icon-circle-primary rounded-full p-2">
+        <i class="fas fa-check text-lg"></i>
       </div>
-      <p class="text-black text-sm sm:text-base leading-relaxed">
-        <?= esc($notif['message'] ?? 'Aksi berhasil diproses.') ?>
-      </p>
+      <div class="flex-1">
+        <p class="font-semibold text-primary-brand mb-1">
+          <?= esc($notif['title'] ?? 'Berhasil') ?>
+        </p>
+        <p class="text-sm text-muted leading-relaxed">
+          <?= esc($notif['message'] ?? 'Aksi berhasil diproses.') ?>
+        </p>
+      </div>
+      <button type="button" id="toast-close" class="text-muted hover:text-primary" aria-label="Tutup notifikasi">
+        <i class="fas fa-times"></i>
+      </button>
     </div>
   </div>
 
@@ -98,10 +98,15 @@ if (! $hdrHasPhoto && ! empty($sessionUser['avatar'])) {
       const shouldShow = <?= $notif ? 'true' : 'false' ?>;
 
       if (shouldShow) {
-  // Auto-hide setelah 4 detik
-  const hide = () => toast.classList.add('opacity-0', 'pointer-events-none');
-  setTimeout(hide, 4000);
-  if (closeBtn) closeBtn.addEventListener('click', hide);
+        const hide = () => {
+          toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-2');
+          toast.classList.remove('opacity-100', 'translate-y-0');
+        };
+
+        setTimeout(hide, 4000);
+        if (closeBtn) {
+          closeBtn.addEventListener('click', hide);
+        }
       }
     })();
   </script>

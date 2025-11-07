@@ -11,6 +11,8 @@ use CodeIgniter\Controller;
  */
 class HistoryController extends BaseController
 {
+    private const PER_PAGE = 10;
+
     public function index()
     {
         $session = session();
@@ -20,8 +22,10 @@ class HistoryController extends BaseController
         $bookingRuangModel = new BookingRuangModel();
         $carModel = new CarModel();
         $ruangModel = new RoomModel();
+        $perPage = self::PER_PAGE;
 
-        // History ruang
+        // History ruang - limit 10, order DESC
+        $ruangBookings = $bookingRuangModel->where('user_id', $userId)->orderBy('tanggal', 'DESC')->findAll($perPage);
         $historyRuang = array_map(function($row) use ($ruangModel) {
             $ruangan = $ruangModel->find($row['room_id']);
             $namaRuangan = is_array($ruangan) ? ($ruangan['nama_ruangan'] ?? '-') : ($ruangan->nama_ruangan ?? '-');
@@ -34,9 +38,10 @@ class HistoryController extends BaseController
                 'lokasi' => $namaRuangan,
                 'status' => $row['status']
             ];
-        }, $bookingRuangModel->getByUser($userId));
+        }, $ruangBookings);
 
-        // History mobil
+        // History mobil - limit 10, order DESC
+        $mobilBookings = $carModel->where('user_id', $userId)->orderBy('tanggal_pergi', 'DESC')->findAll($perPage);
         $historyMobil = array_map(function($row) {
             return [
                 'id' => $row['id'],
@@ -47,12 +52,63 @@ class HistoryController extends BaseController
                 'jumlah_hari' => $row['jumlah_hari'],
                 'status' => $row['status']
             ];
-        }, $carModel->getByUser($userId));
+        }, $mobilBookings);
 
     return view('user/history', [
             'historyRuang' => $historyRuang,
             'historyMobil' => $historyMobil
         ]);
+    }
+
+    /** AJAX load more history */
+    public function load()
+    {
+        $session = session();
+        $userId = $session->get('user_id');
+        if (!$userId) {
+            return $this->response->setJSON(['error' => 'Unauthorized'])->setStatusCode(401);
+        }
+
+        $type = $this->request->getGet('type'); // 'ruang' or 'mobil'
+        $page = (int) $this->request->getGet('page') ?: 1;
+        $perPage = self::PER_PAGE;
+        $offset = ($page - 1) * $perPage;
+
+        $items = [];
+        if ($type === 'ruang') {
+            $bookingRuangModel = new BookingRuangModel();
+            $ruangModel = new RoomModel();
+            $bookings = $bookingRuangModel->where('user_id', $userId)->orderBy('tanggal', 'DESC')->findAll($perPage, $offset);
+            foreach ($bookings as $row) {
+                $ruangan = $ruangModel->find($row['room_id']);
+                $namaRuangan = is_array($ruangan) ? ($ruangan['nama_ruangan'] ?? '-') : ($ruangan->nama_ruangan ?? '-');
+                $items[] = [
+                    'id' => $row['id'],
+                    'judul' => $row['acara'],
+                    'tanggal' => $row['tanggal'],
+                    'waktu_mulai' => $row['jam_mulai'],
+                    'waktu_selesai' => $row['jam_selesai'],
+                    'lokasi' => $namaRuangan,
+                    'status' => $row['status']
+                ];
+            }
+        } elseif ($type === 'mobil') {
+            $carModel = new CarModel();
+            $bookings = $carModel->where('user_id', $userId)->orderBy('tanggal_pergi', 'DESC')->findAll($perPage, $offset);
+            foreach ($bookings as $row) {
+                $items[] = [
+                    'id' => $row['id'],
+                    'judul' => $row['keperluan'],
+                    'tanggal_pergi' => $row['tanggal_pergi'] ?? '-',
+                    'tanggal_pulang' => $row['tanggal_pulang'] ?? '-',
+                    'tujuan' => $row['tujuan'],
+                    'jumlah_hari' => $row['jumlah_hari'],
+                    'status' => $row['status']
+                ];
+            }
+        }
+
+        return $this->response->setJSON(['items' => $items]);
     }
 
     /** Detail riwayat booking ruang untuk user. */

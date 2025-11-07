@@ -308,7 +308,7 @@ class NotificationService
 /* Isi Email untuk notifikasi bahawa booking telah disetujui */
         $html = '<!doctype html><html><head><meta charset="utf-8"><title>' . htmlspecialchars($subject) . '</title></head><body style="font-family: Arial, sans-serif; color: #222;">'
             . '<p>Yth. ' . htmlspecialchars((string)$displayName) . ',</p>'
-            . '<p>Permintaan reservasi Anda telah disetujui oleh tim administrasi. Berikut ringkasan:</p>'
+            . '<p>Permintaan reservasi Anda telah disetujui oleh admin. Berikut ringkasan:</p>'
             . '<ul>'
             . '<li><strong>Booking ID:</strong> ' . htmlspecialchars((string)($booking->id ?? '-')) . '</li>'
             . '<li><strong>Acara / Tujuan:</strong> ' . htmlspecialchars((string)$acara) . '</li>'

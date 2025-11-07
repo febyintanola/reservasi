@@ -15,15 +15,21 @@
         </div>
     <?php endif; ?>
 
+    <?php $defaultAvatar = base_url('public/css/default-avatar.png'); ?>
+
     <section class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-6 max-w-5xl mx-auto">
         <?php if (!empty($drivers)): ?>
             <?php foreach ($drivers as $d): ?>
                 <?php 
-                    $fotoPath = !empty($d['foto_url']) ? base_url($d['foto_url']) : 'https://via.placeholder.com/160x120?text=Driver';
+                    $fotoPath = $defaultAvatar;
+                    if (! empty($d['foto_url'])) {
+                        $fotoPath = preg_match('#^https?://#i', $d['foto_url']) ? $d['foto_url'] : base_url($d['foto_url']);
+                    }
                 ?>
                 <article class="card overflow-hidden">
                     <div class="w-full h-32 bg-primary-soft overflow-hidden flex items-center justify-center">
-                        <img src="<?= esc($fotoPath) ?>" alt="Foto <?= esc($d['nama']) ?>" class="object-cover w-full h-full"/>
+                        <img src="<?= esc($fotoPath) ?>" alt="Foto <?= esc($d['nama']) ?>" class="object-cover w-full h-full"
+                             onerror="this.onerror=null;this.src='<?= esc($defaultAvatar) ?>';"/>
                     </div>
                     <div class="p-3 text-sm space-y-1">
                         <p class="font-semibold text-base truncate" title="<?= esc($d['nama']) ?>"><?= esc($d['nama']) ?></p>

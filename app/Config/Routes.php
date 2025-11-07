@@ -38,6 +38,7 @@ $routes->group('', ['filter' => 'auth'], function($routes) {
         $routes->get('/user/profile', 'UserController::profile');
         $routes->post('/profile/update', 'UserController::update');
         $routes->get('/history', 'HistoryController::index');
+        $routes->get('/user/history/load', 'HistoryController::load');
         $routes->get('/ruang/detail/(:num)', 'HistoryController::detailRuang/$1');
         $routes->get('user/car/detail/(:num)', 'CarController::userDetail/$1');
 

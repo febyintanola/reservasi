@@ -13,14 +13,23 @@
 	<?php endif; ?>
 	<h1 class="text-center font-semibold text-lg mb-6">Tambah Driver</h1>
 
+	<?php
+		$defaultAvatar = base_url('public/css/default-avatar.png');
+		$currentAvatar = $profile['foto_url'] ?? null;
+		if ($currentAvatar && ! preg_match('#^https?://#i', $currentAvatar)) {
+			$currentAvatar = base_url($currentAvatar);
+		}
+		$currentAvatar = $currentAvatar ?: $defaultAvatar;
+	?>
 	<form action="<?= base_url('admin/driver/store') ?>" method="POST" class="space-y-6" autocomplete="off" enctype="multipart/form-data">
 		<?= csrf_field() ?>
 
         <div class="mb-2 relative w-24 h-24 mx-auto">
             <!-- Foto Profil -->
-            <img id="previewFoto" src="<?= esc($profile['foto_url'] ?? 'https://via.placeholder.com/96') ?>"
+            <img id="previewFoto" src="<?= esc($currentAvatar) ?>"
              alt="User profile picture"
-             class="w-24 h-24 rounded-full border border-gray-300 object-cover"/>
+             class="w-24 h-24 rounded-full border border-gray-300 object-cover"
+             onerror="this.onerror=null;this.src='<?= esc($defaultAvatar) ?>';"/>
 
              <!--Tombol Upload Foto-->
             <label for="foto" class="absolute bottom-0 right-0 cursor-pointer bg-black bg-opacity-50 text-white text-xs rounded px-1">

@@ -147,19 +147,19 @@ class CarController extends BaseController
             $driver_id   = (int)$this->request->getPost('driver_id');
             $mobil_jenis = $this->request->getPost('mobil_jenis');
             $mobil_plat  = $this->request->getPost('mobil_plat');
-            $start_datetime = $this->request->getPost('start_datetime'); // dari form
-            $notes = $this->request->getPost('notes');
+            $start_datetime = $this->request->getPost('start_datetime'); // dari form (opsional, tidak selalu tersimpan di DB)
+            $end_datetime = $this->request->getPost('end_datetime');
 
             $dataAssign = [
                 'car_booking_id' => $id,
                 'driver_id'      => $driver_id,
                 'mobil_jenis'    => $mobil_jenis,
                 'mobil_plat'     => $mobil_plat,
-                'start_datetime' => $start_datetime,
-                'end_datetime'   => $this->request->getPost('end_datetime'),
-                'reminder_sent'  => 0,
-                'notes'          => $notes,
             ];
+
+            if (!empty($end_datetime)) {
+                $dataAssign['end_datetime'] = $end_datetime;
+            }
 
             // Insert/update assignment
             $existing = $assignmentModel->where('car_booking_id', $id)->first();
@@ -177,6 +177,9 @@ class CarController extends BaseController
             $driver = $driverModel->find($driver_id);
             $notif = new \App\Libraries\NotificationService();
             $assignment = (object) $assignmentModel->find($assignmentId);
+            if (!empty($start_datetime)) {
+                $assignment->start_datetime = $start_datetime;
+            }
             // Pastikan assignment punya tanggal_pergi
             $carModel = new CarModel();
             try {
@@ -289,29 +292,46 @@ class CarController extends BaseController
      * Cek ketersediaan driver berdasarkan overlap tanggal (hari penuh).
      * Jika ingin mendukung jam, perlu kolom tambahan jam_mulai/jam_selesai.
      */
-        private function isDriverAvailable(int $driverId, string $start, string $end, int $currentBookingId = null): bool
-        {
-            if ($driverId <= 0) return false;
-            $assignmentModel = new DriverAssignmentModel();
-                $builder = $assignmentModel
-                    ->select('driver_assignments.id')
-                    ->join('car_bookings', 'car_bookings.id = driver_assignments.car_booking_id')
-                    ->where('driver_assignments.driver_id', $driverId)
-                    ->groupStart()
-                        ->where('COALESCE(driver_assignments.end_datetime, car_bookings.tanggal_pulang) >', $start)
-                        ->where('COALESCE(driver_assignments.start_datetime, car_bookings.tanggal_pergi) <', $end)
-                    ->groupEnd()
-                    // ignore assignments completed before the requested start
-                    ->groupStart()
-                        ->where('driver_assignments.completed_at IS NULL')
-                        ->orWhere('driver_assignments.completed_at >', $start)
-                    ->groupEnd();
-            if ($currentBookingId) {
-                $builder->where('car_bookings.id !=', $currentBookingId);
-            }
-            $conflict = $builder->first();
-            return $conflict ? false : true;
+    private function isDriverAvailable(int $driverId, string $start, string $end, int $currentBookingId = null): bool
+    {
+        if ($driverId <= 0) {
+            return false;
         }
+
+        $assignmentModel = new DriverAssignmentModel();
+        $db = $assignmentModel->db;
+        $hasStartColumn = $db->fieldExists('start_datetime', 'driver_assignments');
+        $hasEndColumn = $db->fieldExists('end_datetime', 'driver_assignments');
+
+        $builder = $assignmentModel
+            ->select('driver_assignments.id')
+            ->join('car_bookings', 'car_bookings.id = driver_assignments.car_booking_id')
+            ->where('driver_assignments.driver_id', $driverId)
+            ->groupStart();
+
+        $builder->where(
+            ($hasEndColumn ? 'COALESCE(driver_assignments.end_datetime, car_bookings.tanggal_pulang)' : 'car_bookings.tanggal_pulang') . ' >',
+            $start
+        );
+
+        $builder->where(
+            ($hasStartColumn ? 'COALESCE(driver_assignments.start_datetime, car_bookings.tanggal_pergi)' : 'car_bookings.tanggal_pergi') . ' <',
+            $end
+        );
+
+        $builder->groupEnd()
+            ->groupStart()
+                ->where('driver_assignments.completed_at IS NULL')
+                ->orWhere('driver_assignments.completed_at >', $start)
+            ->groupEnd();
+
+        if ($currentBookingId) {
+            $builder->where('car_bookings.id !=', $currentBookingId);
+        }
+
+        $conflict = $builder->first();
+        return $conflict ? false : true;
+    }
 
     /* ================= ADMIN (CRUD BOOKING MANUAL) ================= */
     public function adminIndex()

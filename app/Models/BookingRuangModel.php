@@ -16,7 +16,7 @@ class BookingRuangModel extends Model
     /** Ambil semua booking ruang milik user tertentu. */
     public function getByUser($userId)
     {
-        return $this->where('user_id', $userId)->findAll();
+        return $this->where('user_id', $userId)->orderBy('tanggal', 'DESC')->findAll();
     }
      /** Hitung semua data reservasi (untuk statistik umum). */
      public function countAllReservations()

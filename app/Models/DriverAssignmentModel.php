@@ -17,6 +17,8 @@ class DriverAssignmentModel extends Model
         'driver_id',
         'mobil_jenis',
         'mobil_plat',
-        // 'start_datetime', 'reminder_sent', 'notes'
+        'end_datetime',
+        'completed_at',
     ];
 }
+

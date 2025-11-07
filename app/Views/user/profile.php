@@ -1,6 +1,18 @@
 <?= $this->extend('user/layouts/header') ?>
 <?= $this->section('content') ?>
 
+<?php
+  $defaultAvatar = base_url('public/css/default-avatar.png');
+  $sessionUser   = session('user') ?? ($sessionUser ?? []);
+  $currentAvatar = $profile['foto_url'] ?? ($sessionUser['avatar'] ?? null);
+
+  if ($currentAvatar && ! preg_match('#^https?://#i', $currentAvatar)) {
+    $currentAvatar = base_url($currentAvatar);
+  }
+
+  $currentAvatar = $currentAvatar ?: $defaultAvatar;
+?>
+
 <main class="flex-grow flex flex-col items-center px-4">
 
   <?php if (session()->getFlashdata('success')): ?>
@@ -20,9 +32,10 @@
 
     <div class="mb-2 relative w-24 h-24 mx-auto">
       <!-- Preview Foto Profil -->
-      <img id="previewFoto" src="<?= esc($profile['foto_url'] ?? 'https://via.placeholder.com/96') ?>"
+      <img id="previewFoto" src="<?= esc($currentAvatar) ?>"
            alt="User profile picture"
-           class="w-24 h-24 rounded-full border border-gray-300 object-cover" />
+           class="w-24 h-24 rounded-full border border-gray-300 object-cover"
+           onerror="this.onerror=null;this.src='<?= esc($defaultAvatar) ?>';" />
 
       <!-- Tombol Upload Foto -->
       <label for="foto" class="absolute bottom-0 right-0 cursor-pointer bg-black text-white rounded-full p-1 hover:bg-gray-800" title="Ubah Gambar">

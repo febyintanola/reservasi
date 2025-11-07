@@ -16,23 +16,24 @@
 	<form action="<?= base_url('admin/driver/update/' . ($driver['id'] ?? '')) ?>" method="POST" class="space-y-6" autocomplete="off" enctype="multipart/form-data">
 		<?= csrf_field() ?>
 		<?php
+			$defaultAvatar = base_url('public/css/default-avatar.png');
 			$rawFoto = $driver['foto_url'] ?? ($profile['foto_url'] ?? null);
+			$fotoDisplay = $defaultAvatar;
 			if ($rawFoto) {
 				// Jika bukan URL absolut, jadikan base_url
-				if (!preg_match('#^https?://#i', $rawFoto)) {
+				if (! preg_match('#^https?://#i', $rawFoto)) {
 					$fotoDisplay = base_url($rawFoto);
 				} else {
 					$fotoDisplay = $rawFoto;
 				}
-			} else {
-				$fotoDisplay = 'https://via.placeholder.com/96';
 			}
 		?>
 		<div class="mb-2 relative w-24 h-24 mx-auto">
 			<!-- Foto Profil -->
 			<img id="previewFoto" src="<?= esc($fotoDisplay) ?>"
 				 alt="Foto Driver"
-				 class="w-24 h-24 rounded-full border border-gray-300 object-cover"/>
+				 class="w-24 h-24 rounded-full border border-gray-300 object-cover"
+				 onerror="this.onerror=null;this.src='<?= esc($defaultAvatar) ?>';"/>
 
              <!--Tombol Upload Foto-->
             <label for="foto" class="absolute bottom-0 right-0 cursor-pointer bg-black bg-opacity-50 text-white text-xs rounded px-1">
